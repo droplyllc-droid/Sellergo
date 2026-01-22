@@ -92,7 +92,7 @@ export class VariantsService {
         return;
       }
 
-      const option = options[index];
+      const option = options[index]!;
       for (const value of option.values) {
         current[option.name] = value;
         generate(index + 1, current);

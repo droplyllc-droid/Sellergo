@@ -152,8 +152,8 @@ export class TokenService {
       return 900; // Default 15 minutes
     }
 
-    const value = parseInt(match[1], 10);
-    const unit = match[2];
+    const value = parseInt(match[1]!, 10);
+    const unit = match[2]!;
 
     switch (unit) {
       case 's':

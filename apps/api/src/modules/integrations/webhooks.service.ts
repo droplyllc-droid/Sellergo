@@ -140,7 +140,7 @@ export class WebhooksService {
 
       if (!success && attemptNumber < this.maxRetries) {
         // Schedule retry
-        const delay = this.retryDelays[attemptNumber - 1] || this.retryDelays[this.retryDelays.length - 1];
+        const delay = this.retryDelays[attemptNumber - 1] ?? this.retryDelays[this.retryDelays.length - 1] ?? 60000;
         const nextRetryAt = new Date(Date.now() + delay);
 
         await this.integrationsRepository.updateDelivery(tenantId, delivery.id, {

@@ -352,7 +352,7 @@ export class BillingService {
   async getTransaction(tenantId: string, transactionId: string) {
     const transaction = await this.billingRepository.getTransactionById(tenantId, transactionId);
     if (!transaction) {
-      throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Transaction not found' });
+      throw new NotFoundException({ code: ErrorCode.RESOURCE_NOT_FOUND, message: 'Transaction not found' });
     }
     return transaction;
   }
@@ -368,7 +368,7 @@ export class BillingService {
   async getInvoice(tenantId: string, invoiceId: string) {
     const invoice = await this.billingRepository.getInvoiceById(tenantId, invoiceId);
     if (!invoice) {
-      throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Invoice not found' });
+      throw new NotFoundException({ code: ErrorCode.RESOURCE_NOT_FOUND, message: 'Invoice not found' });
     }
     return invoice;
   }
@@ -490,7 +490,7 @@ export class BillingService {
   async cancelSubscription(tenantId: string, storeId: string, cancelAtPeriodEnd = true) {
     const subscription = await this.billingRepository.getSubscription(tenantId, storeId);
     if (!subscription) {
-      throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'No active subscription' });
+      throw new NotFoundException({ code: ErrorCode.RESOURCE_NOT_FOUND, message: 'No active subscription' });
     }
 
     if (this.stripe && subscription.stripeSubscriptionId) {
@@ -558,7 +558,7 @@ export class BillingService {
     const method = methods.find(m => m.id === paymentMethodId);
 
     if (!method) {
-      throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Payment method not found' });
+      throw new NotFoundException({ code: ErrorCode.RESOURCE_NOT_FOUND, message: 'Payment method not found' });
     }
 
     if (this.stripe && method.stripePaymentMethodId) {
@@ -574,7 +574,7 @@ export class BillingService {
     const method = methods.find(m => m.id === paymentMethodId);
 
     if (!method) {
-      throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Payment method not found' });
+      throw new NotFoundException({ code: ErrorCode.RESOURCE_NOT_FOUND, message: 'Payment method not found' });
     }
 
     const account = await this.getBillingAccount(tenantId, storeId);
