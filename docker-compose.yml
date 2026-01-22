@@ -1,0 +1,159 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: sellergo-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-sellergo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sellergo_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-sellergo}
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./packages/database/prisma/migrations:/docker-entrypoint-initdb.d/migrations:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-sellergo}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    container_name: sellergo-redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # API Service
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: development
+    container_name: sellergo-api
+    restart: unless-stopped
+    ports:
+      - '3001:3001'
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 3001
+      DATABASE_URL: postgresql://${POSTGRES_USER:-sellergo}:${POSTGRES_PASSWORD:-sellergo_secret}@postgres:5432/${POSTGRES_DB:-sellergo}?schema=public
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-your-super-secret-refresh-key-change-in-production}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./apps/api:/app/apps/api
+      - ./packages:/app/packages
+      - /app/node_modules
+      - /app/apps/api/node_modules
+    command: npm run dev --workspace=apps/api
+
+  # Web Frontend (Next.js)
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: development
+    container_name: sellergo-web
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      NEXT_PUBLIC_API_URL: http://localhost:3001/api
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-your-nextauth-secret-change-in-production}
+    depends_on:
+      - api
+    volumes:
+      - ./apps/web:/app/apps/web
+      - ./packages:/app/packages
+      - /app/node_modules
+      - /app/apps/web/node_modules
+      - /app/apps/web/.next
+    command: npm run dev --workspace=apps/web
+
+  # BullMQ Worker for background jobs
+  worker:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: development
+    container_name: sellergo-worker
+    restart: unless-stopped
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-sellergo}:${POSTGRES_PASSWORD:-sellergo_secret}@postgres:5432/${POSTGRES_DB:-sellergo}?schema=public
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./apps/api:/app/apps/api
+      - ./packages:/app/packages
+      - /app/node_modules
+      - /app/apps/api/node_modules
+    command: npm run worker --workspace=apps/api
+
+  # Mailhog for email testing (development only)
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: sellergo-mailhog
+    ports:
+      - '1025:1025' # SMTP
+      - '8025:8025' # Web UI
+    profiles:
+      - development
+
+  # MinIO for S3-compatible object storage (development only)
+  minio:
+    image: minio/minio:latest
+    container_name: sellergo-minio
+    restart: unless-stopped
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-sellergo}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-sellergo_secret}
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    profiles:
+      - development
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+
+networks:
+  default:
+    name: sellergo-network
