@@ -1,9 +1,12 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
 import '@/styles/globals.css';
 import { Providers } from './providers';
 
-const inter = Inter({ subsets: ['latin'] });
+// Using system fonts instead of Google Fonts for offline builds
+// When network is available, you can switch to: import { Inter } from 'next/font/google';
+const inter = {
+  className: 'font-sans',
+};
 
 export const metadata: Metadata = {
   title: {

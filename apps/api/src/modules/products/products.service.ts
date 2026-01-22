@@ -68,7 +68,11 @@ export class ProductsService {
       categoryId: dto.categoryId,
       tags: dto.tags ?? [],
       status: dto.status ?? ProductStatus.DRAFT,
-      images: dto.images,
+      images: dto.images?.map((img, index) => ({
+        url: img.url,
+        alt: img.alt,
+        position: img.position ?? index,
+      })),
     });
   }
 

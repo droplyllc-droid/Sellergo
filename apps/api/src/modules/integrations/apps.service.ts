@@ -133,7 +133,7 @@ export class AppsService {
   async getInstalledApps(tenantId: string, storeId: string) {
     const installed = await this.integrationsRepository.getInstalledApps(tenantId, storeId);
 
-    return installed.map(app => ({
+    return installed.map((app: { appId: string; [key: string]: unknown }) => ({
       ...app,
       appDetails: APPS_CATALOG.find(a => a.id === app.appId),
     }));

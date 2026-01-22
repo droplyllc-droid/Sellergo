@@ -77,7 +77,7 @@ export class StoresService {
    */
   async getStoresForUser(userId: string) {
     const memberships = await this.storesRepository.getStoresForUser(userId);
-    return memberships.map((m) => ({
+    return memberships.map((m: { store: { id: string; name: string; slug: string; logo: string | null; status: string; plan: string; _count: { orders: number; products: number } }; role: string }) => ({
       id: m.store.id,
       name: m.store.name,
       slug: m.store.slug,

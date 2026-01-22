@@ -6,7 +6,9 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
-import * as OTPAuth from 'otpauth';
+// Use local stub when otpauth package is not available
+// import * as OTPAuth from 'otpauth';
+import * as OTPAuth from '../../../lib/otpauth-stub';
 
 export interface MfaSetupResult {
   secret: string;

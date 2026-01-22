@@ -30,6 +30,19 @@ import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import type { AuthenticatedUser } from '../auth/strategies/jwt.strategy';
 import { Permission } from '@sellergo/types';
 
+// Define Multer file interface locally to avoid dependency on @types/multer
+interface MulterFile {
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  size: number;
+  destination: string;
+  filename: string;
+  path: string;
+  buffer: Buffer;
+}
+
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_MIME_TYPES = /image\/(jpeg|png|gif|webp|svg\+xml)|application\/pdf/;
 
@@ -65,7 +78,7 @@ export class UploadsController {
         ],
       }),
     )
-    file: Express.Multer.File,
+    file: MulterFile,
   ) {
     return this.uploadsService.uploadFile(file, user.tenantId, storeId, {
       folder: 'images',
@@ -90,7 +103,7 @@ export class UploadsController {
   async uploadImages(
     @CurrentUser() user: AuthenticatedUser,
     @Param('storeId') storeId: string,
-    @UploadedFiles() files: Express.Multer.File[],
+    @UploadedFiles() files: MulterFile[],
   ) {
     return this.uploadsService.uploadMultiple(files, user.tenantId, storeId, {
       folder: 'images',
@@ -123,7 +136,7 @@ export class UploadsController {
         ],
       }),
     )
-    file: Express.Multer.File,
+    file: MulterFile,
   ) {
     return this.uploadsService.uploadFile(file, user.tenantId, storeId, {
       folder: 'documents',

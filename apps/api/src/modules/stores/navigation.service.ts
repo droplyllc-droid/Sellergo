@@ -38,7 +38,7 @@ export class NavigationService {
 
   async updateNavigationMenu(tenantId: string, menuId: string, dto: UpdateNavigationMenuDto) {
     const menus = await this.storesRepository.getNavigationMenus(tenantId, '');
-    const menu = menus.find((m) => m.id === menuId);
+    const menu = menus.find((m: { id: string }) => m.id === menuId);
 
     if (!menu) {
       throw new NotFoundException({ code: ErrorCode.RESOURCE_NOT_FOUND, message: 'Navigation menu not found' });
@@ -62,7 +62,7 @@ export class NavigationService {
 
   async deleteNavigationMenu(tenantId: string, menuId: string) {
     const menus = await this.storesRepository.getNavigationMenus(tenantId, '');
-    const menu = menus.find((m) => m.id === menuId);
+    const menu = menus.find((m: { id: string }) => m.id === menuId);
 
     if (!menu) {
       throw new NotFoundException({ code: ErrorCode.RESOURCE_NOT_FOUND, message: 'Navigation menu not found' });

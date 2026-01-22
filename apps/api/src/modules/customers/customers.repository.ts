@@ -343,11 +343,15 @@ export class CustomersRepository {
     const block = await prisma.customerBlock.findFirst({
       where: {
         storeId,
-        OR: conditions,
-        OR: [
-          { expiresAt: null },
-          { expiresAt: { gt: now } },
-          { isPermanent: true },
+        AND: [
+          { OR: conditions },
+          {
+            OR: [
+              { expiresAt: null },
+              { expiresAt: { gt: now } },
+              { isPermanent: true },
+            ],
+          },
         ],
       },
     });
@@ -433,7 +437,7 @@ export class CustomersRepository {
 
     return {
       customerId,
-      orders: orders.map(o => ({
+      orders: orders.map((o: { id: string; orderNumber: string; totalAmount: number; status: string; createdAt: Date }) => ({
         id: o.id,
         orderNumber: o.orderNumber,
         total: o.totalAmount,
@@ -467,7 +471,7 @@ export class CustomersRepository {
       take: limit,
     });
 
-    return customers.map(c => ({
+    return customers.map((c: { id: string; firstName: string | null; lastName: string | null; email: string | null; phone: string; totalOrders: number; totalSpent: number; averageOrderValue: number }) => ({
       ...c,
       fullName: [c.firstName, c.lastName].filter(Boolean).join(' ') || c.phone,
     }));

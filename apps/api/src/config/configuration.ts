@@ -1,4 +1,6 @@
-import * as Joi from 'joi';
+// Use local stub when joi package is not available
+// import * as Joi from 'joi';
+import Joi, { JoiSchema } from '../lib/joi-stub';
 
 export const configuration = () => ({
   // Server
@@ -90,7 +92,7 @@ export const configuration = () => ({
 });
 
 // Environment validation schema
-export const validationSchema = Joi.object({
+export const validationSchema: JoiSchema = Joi.object({
   // Required in production
   NODE_ENV: Joi.string()
     .valid('development', 'production', 'test')

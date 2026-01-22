@@ -88,7 +88,7 @@ export class CustomersService {
       }
     }
 
-    const updated = await this.customersRepository.update(tenantId, customerId, dto);
+    const updated = await this.customersRepository.update(tenantId, customerId, { ...dto });
     await this.invalidateCache(tenantId, customer.storeId);
 
     return this.getCustomer(tenantId, customerId);
@@ -114,7 +114,7 @@ export class CustomersService {
 
   async updateAddress(tenantId: string, customerId: string, addressId: string, dto: UpdateAddressDto) {
     await this.getCustomer(tenantId, customerId);
-    return this.customersRepository.updateAddress(tenantId, addressId, dto);
+    return this.customersRepository.updateAddress(tenantId, addressId, { ...dto });
   }
 
   async deleteAddress(tenantId: string, customerId: string, addressId: string) {

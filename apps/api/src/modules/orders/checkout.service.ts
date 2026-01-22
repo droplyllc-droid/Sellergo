@@ -12,7 +12,7 @@ import { RedisService } from '../../core/redis/redis.service';
 import { ErrorCode } from '@sellergo/types';
 import { CheckoutDto } from './dto';
 
-interface CartItem {
+export interface CartItem {
   productId: string;
   variantId?: string;
   quantity: number;
@@ -58,7 +58,7 @@ export class CheckoutService {
       customerPhone: dto.customer.phone,
       customerFirstName: dto.customer.firstName,
       customerLastName: dto.customer.lastName,
-      shippingAddress: dto.shippingAddress,
+      shippingAddress: { ...dto.shippingAddress },
       items,
       subtotal,
       shippingCost,
@@ -180,7 +180,7 @@ export class CheckoutService {
       let variant = null;
       let options: Record<string, string> = {};
       if (item.variantId) {
-        variant = product.variants?.find(v => v.id === item.variantId);
+        variant = product.variants?.find((v: { id: string }) => v.id === item.variantId);
         if (variant) {
           unitPrice = variant.price;
           options = variant.options as Record<string, string>;
@@ -283,7 +283,7 @@ export class CheckoutService {
     try {
       // Find cart by session and mark as recovered
       const carts = await this.ordersRepository.getAbandonedCarts(tenantId, '', { page: 1, limit: 100 });
-      const cart = carts.items.find(c => c.sessionId === sessionId);
+      const cart = carts.items.find((c: { sessionId: string; id: string }) => c.sessionId === sessionId);
       if (cart) {
         await this.ordersRepository.recoverAbandonedCart(tenantId, cart.id);
       }

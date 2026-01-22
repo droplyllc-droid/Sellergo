@@ -39,7 +39,7 @@ export class WebhooksService {
 
   async updateWebhook(tenantId: string, webhookId: string, dto: UpdateWebhookDto) {
     await this.getWebhook(tenantId, webhookId);
-    return this.integrationsRepository.updateWebhook(tenantId, webhookId, dto);
+    return this.integrationsRepository.updateWebhook(tenantId, webhookId, { ...dto });
   }
 
   async deleteWebhook(tenantId: string, webhookId: string) {
