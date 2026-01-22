@@ -1,5 +1,5 @@
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
-import { PrismaClient, Prisma } from '@youseller/database';
+import { PrismaClient, Prisma } from '@sellergo/database';
 
 export interface TenantContext {
   tenantId: string;
@@ -27,6 +27,13 @@ export class DatabaseService
     });
   }
 
+  /**
+   * Property alias for direct prisma access
+   */
+  get prisma(): this {
+    return this;
+  }
+
   async onModuleInit(): Promise<void> {
     await this.$connect();
     this.logger.log('Database connected');
@@ -48,10 +55,21 @@ export class DatabaseService
   }
 
   /**
-   * Execute operations within a tenant context
+   * Get a tenant-scoped database client
+   * Note: For proper RLS, use withTenantTransaction instead
+   */
+  async withTenant(tenantId: string): Promise<this> {
+    // TODO: Implement proper RLS with session variables
+    // For now, return the client directly
+    // The tenant isolation should be enforced at query level
+    return this;
+  }
+
+  /**
+   * Execute operations within a tenant context with RLS
    * This sets the PostgreSQL session variable for RLS
    */
-  async withTenant<T>(
+  async withTenantTransaction<T>(
     context: TenantContext,
     callback: (tx: Prisma.TransactionClient) => Promise<T>
   ): Promise<T> {

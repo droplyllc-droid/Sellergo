@@ -67,7 +67,7 @@ export class AuthService {
     const passwordValidation = this.passwordService.validatePasswordStrength(
       dto.password
     );
-    if (!passwordValidation.isValid) {
+    if (!passwordValidation.valid) {
       throw new BadRequestException({
         code: ErrorCode.PASSWORD_TOO_WEAK,
         message: passwordValidation.errors.join(', '),
@@ -416,7 +416,7 @@ export class AuthService {
     const passwordValidation = this.passwordService.validatePasswordStrength(
       dto.newPassword
     );
-    if (!passwordValidation.isValid) {
+    if (!passwordValidation.valid) {
       throw new BadRequestException({
         code: ErrorCode.PASSWORD_TOO_WEAK,
         message: passwordValidation.errors.join(', '),
@@ -524,7 +524,7 @@ export class AuthService {
     const passwordValidation = this.passwordService.validatePasswordStrength(
       dto.newPassword
     );
-    if (!passwordValidation.isValid) {
+    if (!passwordValidation.valid) {
       throw new BadRequestException({
         code: ErrorCode.PASSWORD_TOO_WEAK,
         message: passwordValidation.errors.join(', '),

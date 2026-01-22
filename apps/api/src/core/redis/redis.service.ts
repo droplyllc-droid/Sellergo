@@ -81,9 +81,16 @@ export class RedisService implements OnModuleDestroy {
    * Delete multiple keys by pattern
    */
   async delByPattern(pattern: string): Promise<number> {
-    const keys = await this.client.keys(pattern);
-    if (keys.length === 0) return 0;
-    return this.client.del(...keys);
+    const foundKeys = await this.client.keys(pattern);
+    if (foundKeys.length === 0) return 0;
+    return this.client.del(...foundKeys);
+  }
+
+  /**
+   * Get keys matching a pattern
+   */
+  async keys(pattern: string): Promise<string[]> {
+    return this.client.keys(pattern);
   }
 
   /**

@@ -10,19 +10,25 @@ import * as crypto from 'crypto';
 @Injectable()
 export class PasswordService {
   private readonly MIN_PASSWORD_LENGTH = 12;
-  private readonly ARGON2_OPTIONS: argon2.Options = {
+  private readonly ARGON2_OPTIONS = {
     type: argon2.argon2id,
     memoryCost: 65536, // 64 MB
     timeCost: 3,
     parallelism: 4,
     hashLength: 32,
-  };
+  } as const;
 
   /**
    * Hash a password using Argon2id
    */
   async hash(password: string): Promise<string> {
-    return argon2.hash(password, this.ARGON2_OPTIONS);
+    return argon2.hash(password, {
+      type: argon2.argon2id,
+      memoryCost: 65536,
+      timeCost: 3,
+      parallelism: 4,
+      hashLength: 32,
+    });
   }
 
   /**

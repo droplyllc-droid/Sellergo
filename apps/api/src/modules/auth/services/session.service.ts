@@ -55,6 +55,24 @@ export class SessionService {
   }
 
   /**
+   * Create a new session (object parameter overload)
+   */
+  async createSessionFromObject(data: {
+    userId: string;
+    refreshTokenHash: string;
+    ipAddress: string;
+    userAgent: string;
+    expiresAt?: Date;
+  }): Promise<string> {
+    return this.createSession(
+      data.userId,
+      data.refreshTokenHash,
+      data.userAgent,
+      data.ipAddress,
+    );
+  }
+
+  /**
    * Create a new session
    */
   async createSession(
@@ -373,5 +391,66 @@ export class SessionService {
       device,
       isMobile,
     };
+  }
+
+  /**
+   * Find valid session by user ID and refresh token
+   */
+  async findValidSession(
+    userId: string,
+    refreshToken: string,
+  ): Promise<{ id: string } & SessionData | null> {
+    const sessionIds = await this.getUserSessionIds(userId);
+    const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+
+    for (const sessionId of sessionIds) {
+      const session = await this.getSession(sessionId);
+      if (session && session.refreshTokenHash === tokenHash) {
+        return { id: sessionId, ...session };
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Update session data
+   */
+  async updateSession(
+    sessionId: string,
+    data: {
+      refreshTokenHash?: string;
+      lastActivityAt?: Date;
+    },
+  ): Promise<void> {
+    const session = await this.getSession(sessionId);
+    if (!session) {
+      return;
+    }
+
+    if (data.refreshTokenHash) {
+      session.refreshTokenHash = data.refreshTokenHash;
+    }
+    if (data.lastActivityAt) {
+      session.lastActivityAt = data.lastActivityAt;
+    }
+
+    const ttl = await this.redisService.ttl(`${this.SESSION_PREFIX}${sessionId}`);
+    if (ttl > 0) {
+      await this.redisService.set(
+        `${this.SESSION_PREFIX}${sessionId}`,
+        JSON.stringify(session),
+        ttl,
+      );
+    }
+  }
+
+  /**
+   * Revoke session by refresh token
+   */
+  async revokeSessionByToken(userId: string, refreshToken: string): Promise<void> {
+    const session = await this.findValidSession(userId, refreshToken);
+    if (session) {
+      await this.revokeSession(session.id);
+    }
   }
 }
