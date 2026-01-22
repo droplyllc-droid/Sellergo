@@ -193,7 +193,7 @@ export class OrdersRepository {
     const prisma = await this.db.withTenant(tenantId);
     return prisma.order.update({
       where: { id },
-      data: { fulfillmentStatus, shippedAt: fulfillmentStatus === 'shipped' ? new Date() : undefined },
+      data: { fulfillmentStatus, shippedAt: fulfillmentStatus === FulfillmentStatus.FULFILLED ? new Date() : undefined },
     });
   }
 
@@ -253,7 +253,7 @@ export class OrdersRepository {
       where: { storeId },
       _count: true,
     });
-    return result.reduce((acc, { status, _count }) => ({ ...acc, [status]: _count }), {});
+    return result.reduce((acc: Record<string, number>, { status, _count }: { status: string; _count: number }) => ({ ...acc, [status]: _count }), {} as Record<string, number>);
   }
 
   // Abandoned Carts

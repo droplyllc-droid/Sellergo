@@ -6,7 +6,8 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ErrorCode, Language, UserRole } from '@sellergo/types';
+import { ErrorCode } from '@sellergo/types';
+import type { UserRole } from '@sellergo/types';
 import { TokenService } from './services/token.service';
 import { PasswordService } from './services/password.service';
 import { MfaService } from './services/mfa.service';
@@ -77,8 +78,8 @@ export class AuthService {
     // Hash password
     const passwordHash = await this.passwordService.hash(dto.password);
 
-    // Create user and tenant
-    const { user, tenant } = await this.authRepository.createUserWithTenant({
+    // Create user
+    const user = await this.authRepository.createUser({
       email: dto.email.toLowerCase().trim(),
       passwordHash,
       firstName: dto.firstName.trim(),
@@ -92,11 +93,7 @@ export class AuthService {
     );
 
     // Store verification token
-    await this.authRepository.createEmailVerificationToken({
-      email: user.email,
-      token: verificationToken,
-      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
-    });
+    await this.authRepository.updateEmailVerificationToken(user.id, verificationToken);
 
     // Queue verification email
     await this.queueService.queueEmail({
@@ -111,7 +108,6 @@ export class AuthService {
     // Log audit event
     await this.authRepository.createAuditLog({
       userId: user.id,
-      tenantId: tenant.id,
       action: 'REGISTER',
       ipAddress: metadata.ipAddress,
       userAgent: metadata.userAgent,
@@ -215,16 +211,12 @@ export class AuthService {
     const tokens = await this.generateAuthTokens(user, memberships[0]);
 
     // Create session
-    await this.sessionService.createSession({
-      userId: user.id,
-      refreshTokenHash: await this.passwordService.hash(tokens.refreshToken),
-      ipAddress: metadata.ipAddress,
-      userAgent: metadata.userAgent,
-      expiresAt: new Date(
-        Date.now() +
-          this.tokenService.getRefreshTokenExpiryMs(dto.rememberMe ?? false)
-      ),
-    });
+    await this.sessionService.createSession(
+      user.id,
+      await this.passwordService.hash(tokens.refreshToken),
+      metadata.userAgent,
+      metadata.ipAddress,
+    );
 
     // Reset failed attempts and update last login
     await this.authRepository.updateUser(user.id, {
@@ -291,7 +283,7 @@ export class AuthService {
     const newTokens = await this.generateAuthTokens(user, memberships[0]);
 
     // Update session with new refresh token hash
-    await this.sessionService.updateSession(session.id, {
+    await this.sessionService.updateSession(session.id!, {
       refreshTokenHash: await this.passwordService.hash(newTokens.refreshToken),
       lastActivityAt: new Date(),
     });
@@ -366,13 +358,14 @@ export class AuthService {
 
     // Generate reset token
     const resetToken = await this.tokenService.generatePasswordResetToken();
+    const resetTokenHash = await this.passwordService.hash(resetToken);
 
     // Store reset token
-    await this.authRepository.createPasswordResetToken({
-      userId: user.id,
-      token: resetToken,
-      expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour
-    });
+    await this.authRepository.setPasswordResetToken(
+      user.id,
+      resetTokenHash,
+      new Date(Date.now() + 60 * 60 * 1000), // 1 hour
+    );
 
     // Queue reset email
     await this.queueService.queueEmail({
@@ -427,14 +420,10 @@ export class AuthService {
     const passwordHash = await this.passwordService.hash(dto.newPassword);
 
     // Update password
-    await this.authRepository.updateUser(resetToken.userId, {
-      passwordHash,
-      failedLoginAttempts: 0,
-      lockedUntil: null,
-    });
+    await this.authRepository.updatePassword(resetToken.userId, passwordHash);
 
     // Mark token as used
-    await this.authRepository.markPasswordResetTokenUsed(resetToken.id);
+    await this.authRepository.markPasswordResetTokenUsed(resetToken.userId);
 
     // Revoke all sessions (force re-login)
     await this.sessionService.revokeAllUserSessions(resetToken.userId);
@@ -476,14 +465,11 @@ export class AuthService {
       });
     }
 
-    await this.authRepository.updateUser(user.id, {
-      emailVerified: true,
-      emailVerifiedAt: new Date(),
-      status: 'ACTIVE',
-    });
+    // Verify email
+    await this.authRepository.verifyEmail(user.id);
 
     // Delete verification token
-    await this.authRepository.deleteEmailVerificationToken(verificationToken.id);
+    await this.authRepository.deleteEmailVerificationToken(user.id);
 
     // Log audit event
     await this.authRepository.createAuditLog({
@@ -583,7 +569,7 @@ export class AuthService {
    */
   async verifyMfa(
     userId: string,
-    dto: MfaVerifyDto,
+    dto: MfaVerifyDto | { code: string },
     metadata: { ipAddress: string; userAgent: string }
   ): Promise<void> {
     // Get pending MFA setup
@@ -698,7 +684,7 @@ export class AuthService {
     sessionId: string,
     metadata: { ipAddress: string; userAgent: string }
   ): Promise<void> {
-    await this.sessionService.revokeSession(userId, sessionId);
+    await this.sessionService.revokeSession(sessionId);
 
     await this.authRepository.createAuditLog({
       userId,
@@ -722,7 +708,7 @@ export class AuthService {
       email: user.email,
       tenantId: membership?.tenantId,
       storeId: membership?.storeId,
-      role: membership?.role,
+      role: membership?.role as UserRole | undefined,
     });
 
     const refreshToken = await this.tokenService.generateRefreshToken({
@@ -818,8 +804,8 @@ export class AuthService {
       storeId: m.storeId,
       storeName: m.store.name,
       storeLogo: m.store.logoUrl ? { url: m.store.logoUrl } : undefined,
-      role: m.role as 'owner' | 'admin' | 'manager' | 'staff' | 'read_only',
-      isOwner: m.role === 'OWNER',
+      role: m.role as UserRole,
+      isOwner: m.role === 'owner',
     }));
   }
 }

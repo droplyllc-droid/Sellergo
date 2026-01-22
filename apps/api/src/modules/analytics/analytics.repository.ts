@@ -164,8 +164,8 @@ export class AnalyticsRepository {
       _count: true,
     });
 
-    const total = result.reduce((sum, r) => sum + r._count, 0);
-    return result.map(r => ({
+    const total = result.reduce((sum: number, r: { status: string; _count: number }) => sum + r._count, 0);
+    return result.map((r: { status: string; _count: number }) => ({
       status: r.status,
       count: r._count,
       percentage: total > 0 ? (r._count / total) * 100 : 0,
@@ -239,7 +239,7 @@ export class AnalyticsRepository {
       take: limit,
     });
 
-    return customers.map(c => ({
+    return customers.map((c: { id: string; firstName: string | null; lastName: string | null; phone: string; totalOrders: number; totalSpent: number }) => ({
       customerId: c.id,
       customerName: [c.firstName, c.lastName].filter(Boolean).join(' ') || c.phone,
       totalOrders: c.totalOrders,
@@ -275,7 +275,7 @@ export class AnalyticsRepository {
       where: { storeId, trackQuantity: true },
       select: { quantity: true, price: true },
     });
-    const totalStockValue = products.reduce((sum, p) => sum + p.quantity * p.price, 0);
+    const totalStockValue = products.reduce((sum: number, p: { quantity: number; price: number }) => sum + p.quantity * p.price, 0);
 
     return {
       totalProducts,
@@ -386,7 +386,7 @@ export class AnalyticsRepository {
       take: limit,
     });
 
-    return orders.map(o => ({
+    return orders.map((o: { id: string; orderNumber: string; customerFirstName: string | null; customerLastName: string | null; totalAmount: number; status: string; createdAt: Date }) => ({
       id: o.id,
       orderNumber: o.orderNumber,
       customerName: [o.customerFirstName, o.customerLastName].filter(Boolean).join(' '),

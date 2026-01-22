@@ -1,5 +1,3 @@
-import type { Prisma } from '@prisma/client';
-
 // =============================================================================
 // QUERY HELPERS
 // =============================================================================
@@ -43,7 +41,7 @@ export const storeWithOwner = {
       avatarUrl: true,
     },
   },
-} satisfies Prisma.StoreInclude;
+};
 
 export const storeWithMembers = {
   members: {
@@ -63,7 +61,7 @@ export const storeWithMembers = {
       status: 'ACTIVE',
     },
   },
-} satisfies Prisma.StoreInclude;
+};
 
 export const storeWithStatistics = {
   _count: {
@@ -74,7 +72,7 @@ export const storeWithStatistics = {
       members: true,
     },
   },
-} satisfies Prisma.StoreInclude;
+};
 
 // =============================================================================
 // PRODUCT INCLUDE TYPES
@@ -86,7 +84,7 @@ export const productWithImages = {
       position: 'asc' as const,
     },
   },
-} satisfies Prisma.ProductInclude;
+};
 
 export const productWithCategory = {
   category: {
@@ -96,7 +94,7 @@ export const productWithCategory = {
       slug: true,
     },
   },
-} satisfies Prisma.ProductInclude;
+};
 
 export const productWithVariants = {
   variants: {
@@ -104,7 +102,7 @@ export const productWithVariants = {
       position: 'asc' as const,
     },
   },
-} satisfies Prisma.ProductInclude;
+};
 
 export const productFull = {
   ...productWithImages,
@@ -119,7 +117,7 @@ export const productFull = {
       createdAt: 'desc' as const,
     },
   },
-} satisfies Prisma.ProductInclude;
+};
 
 // =============================================================================
 // ORDER INCLUDE TYPES
@@ -137,7 +135,7 @@ export const orderWithItems = {
       },
     },
   },
-} satisfies Prisma.OrderInclude;
+};
 
 export const orderWithCustomer = {
   customer: {
@@ -151,7 +149,7 @@ export const orderWithCustomer = {
       totalSpent: true,
     },
   },
-} satisfies Prisma.OrderInclude;
+};
 
 export const orderWithTimeline = {
   timeline: {
@@ -159,13 +157,13 @@ export const orderWithTimeline = {
       createdAt: 'desc' as const,
     },
   },
-} satisfies Prisma.OrderInclude;
+};
 
 export const orderFull = {
   ...orderWithItems,
   ...orderWithCustomer,
   ...orderWithTimeline,
-} satisfies Prisma.OrderInclude;
+};
 
 // =============================================================================
 // CUSTOMER INCLUDE TYPES
@@ -185,7 +183,7 @@ export const customerWithOrders = {
       createdAt: true,
     },
   },
-} satisfies Prisma.CustomerInclude;
+};
 
 // =============================================================================
 // SELECT TYPES FOR PERFORMANCE
@@ -202,7 +200,7 @@ export const userSelect = {
   mfaEnabled: true,
   emailVerified: true,
   createdAt: true,
-} satisfies Prisma.UserSelect;
+};
 
 export const productListSelect = {
   id: true,
@@ -232,7 +230,7 @@ export const productListSelect = {
       name: true,
     },
   },
-} satisfies Prisma.ProductSelect;
+};
 
 export const orderListSelect = {
   id: true,
@@ -261,7 +259,7 @@ export const orderListSelect = {
       items: true,
     },
   },
-} satisfies Prisma.OrderSelect;
+};
 
 export const customerListSelect = {
   id: true,
@@ -275,7 +273,7 @@ export const customerListSelect = {
   firstOrderAt: true,
   status: true,
   createdAt: true,
-} satisfies Prisma.CustomerSelect;
+};
 
 // =============================================================================
 // FILTER TYPES

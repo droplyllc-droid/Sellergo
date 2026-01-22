@@ -124,7 +124,7 @@ export class AppsService {
   async getAppDetails(appId: string) {
     const app = APPS_CATALOG.find(a => a.id === appId);
     if (!app) {
-      throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'App not found' });
+      throw new NotFoundException({ code: ErrorCode.RESOURCE_NOT_FOUND, message: 'App not found' });
     }
     return app;
   }
@@ -133,7 +133,7 @@ export class AppsService {
   async getInstalledApps(tenantId: string, storeId: string) {
     const installed = await this.integrationsRepository.getInstalledApps(tenantId, storeId);
 
-    return installed.map(app => ({
+    return installed.map((app: { appId: string; [key: string]: unknown }) => ({
       ...app,
       appDetails: APPS_CATALOG.find(a => a.id === app.appId),
     }));
@@ -142,7 +142,7 @@ export class AppsService {
   async getInstalledApp(tenantId: string, installationId: string) {
     const app = await this.integrationsRepository.getInstalledAppById(tenantId, installationId);
     if (!app) {
-      throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'App installation not found' });
+      throw new NotFoundException({ code: ErrorCode.RESOURCE_NOT_FOUND, message: 'App installation not found' });
     }
     return {
       ...app,
@@ -154,7 +154,7 @@ export class AppsService {
   async installApp(tenantId: string, storeId: string, appId: string, config: Record<string, unknown>, userId: string) {
     const app = APPS_CATALOG.find(a => a.id === appId);
     if (!app) {
-      throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'App not found' });
+      throw new NotFoundException({ code: ErrorCode.RESOURCE_NOT_FOUND, message: 'App not found' });
     }
 
     if (app.status === AppStatus.COMING_SOON) {
@@ -215,7 +215,7 @@ export class AppsService {
   async updateAnalyticsIntegration(tenantId: string, integrationId: string, config: Record<string, unknown>, isEnabled?: boolean) {
     const integration = await this.integrationsRepository.getAnalyticsIntegrationById(tenantId, integrationId);
     if (!integration) {
-      throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Integration not found' });
+      throw new NotFoundException({ code: ErrorCode.RESOURCE_NOT_FOUND, message: 'Integration not found' });
     }
 
     const updates: Record<string, unknown> = { config };
@@ -227,7 +227,7 @@ export class AppsService {
   async deleteAnalyticsIntegration(tenantId: string, integrationId: string) {
     const integration = await this.integrationsRepository.getAnalyticsIntegrationById(tenantId, integrationId);
     if (!integration) {
-      throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Integration not found' });
+      throw new NotFoundException({ code: ErrorCode.RESOURCE_NOT_FOUND, message: 'Integration not found' });
     }
 
     await this.integrationsRepository.deleteAnalyticsIntegration(tenantId, integrationId);

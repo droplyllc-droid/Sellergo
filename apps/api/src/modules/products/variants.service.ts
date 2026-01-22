@@ -32,7 +32,7 @@ export class VariantsService {
 
   async createVariant(tenantId: string, storeId: string, productId: string, dto: CreateVariantDto) {
     const product = await this.productsRepository.findById(tenantId, productId);
-    if (!product) throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Product not found' });
+    if (!product) throw new NotFoundException({ code: ErrorCode.RESOURCE_NOT_FOUND, message: 'Product not found' });
 
     const position = product.variants.length;
 
@@ -92,7 +92,7 @@ export class VariantsService {
         return;
       }
 
-      const option = options[index];
+      const option = options[index]!;
       for (const value of option.values) {
         current[option.name] = value;
         generate(index + 1, current);

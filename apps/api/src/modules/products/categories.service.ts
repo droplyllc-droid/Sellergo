@@ -19,9 +19,14 @@ export class CategoriesService {
   async getCategoryTree(tenantId: string, storeId: string) {
     const categories = await this.productsRepository.getCategories(tenantId, storeId);
 
-    // Build tree structure
-    const categoryMap = new Map(categories.map(c => [c.id, { ...c, children: [] as typeof categories }]));
-    const roots: typeof categories = [];
+    // Build tree structure with explicit typing
+    type Category = (typeof categories)[number];
+    type CategoryWithChildren = Category & { children: CategoryWithChildren[] };
+
+    const categoryMap = new Map<string, CategoryWithChildren>(
+      categories.map((c: Category) => [c.id, { ...c, children: [] }])
+    );
+    const roots: CategoryWithChildren[] = [];
 
     for (const category of categoryMap.values()) {
       if (category.parentId && categoryMap.has(category.parentId)) {
@@ -36,7 +41,7 @@ export class CategoriesService {
 
   async getCategory(tenantId: string, categoryId: string) {
     const category = await this.productsRepository.getCategoryById(tenantId, categoryId);
-    if (!category) throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Category not found' });
+    if (!category) throw new NotFoundException({ code: ErrorCode.RESOURCE_NOT_FOUND, message: 'Category not found' });
     return category;
   }
 

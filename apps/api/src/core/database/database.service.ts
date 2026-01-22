@@ -29,6 +29,8 @@ export class DatabaseService
 
   /**
    * Property alias for direct prisma access
+   * Getter to allow `this.db.prisma.xxx` pattern
+   * Returns the DatabaseService instance itself since it extends PrismaClient
    */
   get prisma(): this {
     return this;
@@ -40,7 +42,8 @@ export class DatabaseService
 
     // Log slow queries in development
     if (process.env['NODE_ENV'] === 'development') {
-      this.$on('query', (e: Prisma.QueryEvent) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      this.$on('query', (e: any) => {
         if (e.duration > 100) {
           this.logger.warn(`Slow query (${e.duration}ms): ${e.query}`);
         }
@@ -72,7 +75,7 @@ export class DatabaseService
     context: TenantContext,
     callback: (tx: Prisma.TransactionClient) => Promise<T>
   ): Promise<T> {
-    return this.$transaction(async (tx) => {
+    return this.$transaction(async (tx: Prisma.TransactionClient) => {
       // Set tenant context for RLS
       await tx.$executeRaw`SELECT set_config('app.tenant_id', ${context.tenantId}, true)`;
 
@@ -91,19 +94,16 @@ export class DatabaseService
   /**
    * Execute a transaction with custom options
    */
-  async executeTransaction<T>(
+  async runTransaction<T>(
     callback: (tx: Prisma.TransactionClient) => Promise<T>,
     options?: {
       maxWait?: number;
       timeout?: number;
-      isolationLevel?: Prisma.TransactionIsolationLevel;
     }
   ): Promise<T> {
     return this.$transaction(callback, {
       maxWait: options?.maxWait ?? 5000,
       timeout: options?.timeout ?? 10000,
-      isolationLevel:
-        options?.isolationLevel ?? Prisma.TransactionIsolationLevel.ReadCommitted,
     });
   }
 

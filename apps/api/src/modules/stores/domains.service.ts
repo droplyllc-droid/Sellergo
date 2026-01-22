@@ -81,10 +81,10 @@ export class DomainsService {
 
   async verifyDomain(tenantId: string, domainId: string) {
     const domains = await this.storesRepository.getDomains(tenantId, '');
-    const domain = domains.find((d) => d.id === domainId);
+    const domain = domains.find((d: { id: string; domain: string; isVerified: boolean; verificationToken: string | null }) => d.id === domainId);
 
     if (!domain) {
-      throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Domain not found' });
+      throw new NotFoundException({ code: ErrorCode.RESOURCE_NOT_FOUND, message: 'Domain not found' });
     }
 
     if (domain.isVerified) {
@@ -105,11 +105,11 @@ export class DomainsService {
 
   private async checkDnsRecords(domain: string, verificationToken: string): Promise<boolean> {
     try {
-      const cnameRecords = await dns.resolveCname(domain).catch(() => []);
-      const hasCname = cnameRecords.some((r) => r.toLowerCase().includes(this.baseDomain.toLowerCase()));
+      const cnameRecords: string[] = await dns.resolveCname(domain).catch(() => [] as string[]);
+      const hasCname = cnameRecords.some((r: string) => r.toLowerCase().includes(this.baseDomain.toLowerCase()));
 
-      const txtRecords = await dns.resolveTxt(`_sellergo-verification.${domain}`).catch(() => []);
-      const hasTxt = txtRecords.some((records) => records.some((r) => r.includes(verificationToken)));
+      const txtRecords: string[][] = await dns.resolveTxt(`_sellergo-verification.${domain}`).catch(() => [] as string[][]);
+      const hasTxt = txtRecords.some((records: string[]) => records.some((r: string) => r.includes(verificationToken)));
 
       return hasCname || hasTxt;
     } catch (error) {
@@ -120,12 +120,12 @@ export class DomainsService {
 
   async setPrimaryDomain(tenantId: string, storeId: string, domainId: string) {
     const domains = await this.storesRepository.getDomains(tenantId, storeId);
-    const domain = domains.find((d) => d.id === domainId);
+    const domain = domains.find((d: { id: string; isVerified: boolean; isPrimary: boolean }) => d.id === domainId);
 
-    if (!domain) throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Domain not found' });
+    if (!domain) throw new NotFoundException({ code: ErrorCode.RESOURCE_NOT_FOUND, message: 'Domain not found' });
     if (!domain.isVerified) throw new BadRequestException({ code: ErrorCode.VALIDATION_ERROR, message: 'Domain must be verified first' });
 
-    const currentPrimary = domains.find((d) => d.isPrimary);
+    const currentPrimary = domains.find((d: { isPrimary: boolean; id: string }) => d.isPrimary);
     if (currentPrimary) {
       await this.storesRepository.updateDomain(tenantId, currentPrimary.id, { isPrimary: false });
     }
@@ -135,9 +135,9 @@ export class DomainsService {
 
   async deleteDomain(tenantId: string, domainId: string) {
     const domains = await this.storesRepository.getDomains(tenantId, '');
-    const domain = domains.find((d) => d.id === domainId);
+    const domain = domains.find((d: { id: string; type: string; isPrimary: boolean }) => d.id === domainId);
 
-    if (!domain) throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Domain not found' });
+    if (!domain) throw new NotFoundException({ code: ErrorCode.RESOURCE_NOT_FOUND, message: 'Domain not found' });
     if (domain.type === 'subdomain') throw new BadRequestException({ code: ErrorCode.VALIDATION_ERROR, message: 'Cannot delete subdomain' });
     if (domain.isPrimary) throw new BadRequestException({ code: ErrorCode.VALIDATION_ERROR, message: 'Cannot delete primary domain' });
 

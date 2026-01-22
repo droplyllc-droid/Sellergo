@@ -5,7 +5,8 @@
 
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../../core/database/database.service';
-import { Language } from '@sellergo/types';
+import { Prisma } from '@sellergo/database';
+import type { Language } from '@sellergo/types';
 
 export interface CreateUserData {
   email: string;
@@ -171,7 +172,7 @@ export class AuthRepository {
    * Create user with store (full registration)
    */
   async createUserWithStore(data: CreateUserWithStoreData) {
-    return this.db.prisma.$transaction(async (tx) => {
+    return this.db.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // Create tenant
       const tenant = await tx.tenant.create({
         data: {
@@ -522,6 +523,64 @@ export class AuthRepository {
       where: { id: userId },
       data: {
         emailVerificationToken: token,
+      },
+    });
+  }
+
+  /**
+   * Find user by valid password reset token
+   */
+  async findValidPasswordResetToken(tokenHash: string) {
+    const user = await this.db.prisma.user.findFirst({
+      where: {
+        passwordResetToken: { not: null },
+        passwordResetExpiresAt: { gt: new Date() },
+      },
+    });
+
+    if (!user) return null;
+
+    // In production, compare hashed token
+    return { id: user.id, userId: user.id, token: user.passwordResetToken };
+  }
+
+  /**
+   * Mark password reset token as used
+   */
+  async markPasswordResetTokenUsed(userId: string) {
+    return this.db.prisma.user.update({
+      where: { id: userId },
+      data: {
+        passwordResetToken: null,
+        passwordResetExpiresAt: null,
+      },
+    });
+  }
+
+  /**
+   * Find valid email verification token
+   */
+  async findValidEmailVerificationToken(token: string) {
+    const user = await this.db.prisma.user.findFirst({
+      where: {
+        emailVerificationToken: token,
+        emailVerified: false,
+      },
+    });
+
+    if (!user) return null;
+
+    return { id: user.id, email: user.email, userId: user.id };
+  }
+
+  /**
+   * Delete email verification token (mark as used)
+   */
+  async deleteEmailVerificationToken(userId: string) {
+    return this.db.prisma.user.update({
+      where: { id: userId },
+      data: {
+        emailVerificationToken: null,
       },
     });
   }

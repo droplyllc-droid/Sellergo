@@ -179,7 +179,7 @@ export class IntegrationsRepository {
     responseStatus?: number;
     responseBody?: string;
     duration?: number;
-    success: boolean;
+    success?: boolean;
     errorMessage?: string;
     nextRetryAt?: Date;
   }) {
@@ -314,8 +314,8 @@ export class IntegrationsRepository {
       prisma.analyticsIntegration.findMany({ where: { storeId, isEnabled: true } }),
     ]);
 
-    const pixelProviders = new Set(pixels.map(p => p.provider));
-    const analyticsProviders = new Set(analytics.map(a => a.provider));
+    const pixelProviders = new Set(pixels.map((p: { provider: string }) => p.provider));
+    const analyticsProviders = new Set(analytics.map((a: { provider: string }) => a.provider));
 
     return {
       googleAnalytics: analyticsProviders.has('google_analytics'),

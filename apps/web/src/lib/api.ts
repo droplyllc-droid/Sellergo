@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API_URL = process.env['NEXT_PUBLIC_API_URL'] || 'http://localhost:3001/api';
 
 interface RequestOptions extends RequestInit {
   token?: string;
@@ -19,9 +19,9 @@ class ApiClient {
   private async request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
     const { token, ...fetchOptions } = options;
 
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...options.headers,
+      ...(options.headers as Record<string, string>),
     };
 
     if (token) {
@@ -56,7 +56,7 @@ class ApiClient {
     return this.request<T>(endpoint, {
       ...options,
       method: 'POST',
-      body: data ? JSON.stringify(data) : undefined,
+      ...(data !== undefined && { body: JSON.stringify(data) }),
     });
   }
 
@@ -64,7 +64,7 @@ class ApiClient {
     return this.request<T>(endpoint, {
       ...options,
       method: 'PATCH',
-      body: data ? JSON.stringify(data) : undefined,
+      ...(data !== undefined && { body: JSON.stringify(data) }),
     });
   }
 
@@ -72,7 +72,7 @@ class ApiClient {
     return this.request<T>(endpoint, {
       ...options,
       method: 'PUT',
-      body: data ? JSON.stringify(data) : undefined,
+      ...(data !== undefined && { body: JSON.stringify(data) }),
     });
   }
 

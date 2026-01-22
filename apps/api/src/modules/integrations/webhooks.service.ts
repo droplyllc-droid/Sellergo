@@ -28,7 +28,7 @@ export class WebhooksService {
   async getWebhook(tenantId: string, webhookId: string) {
     const webhook = await this.integrationsRepository.getWebhookById(tenantId, webhookId);
     if (!webhook) {
-      throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Webhook not found' });
+      throw new NotFoundException({ code: ErrorCode.RESOURCE_NOT_FOUND, message: 'Webhook not found' });
     }
     return webhook;
   }
@@ -39,7 +39,7 @@ export class WebhooksService {
 
   async updateWebhook(tenantId: string, webhookId: string, dto: UpdateWebhookDto) {
     await this.getWebhook(tenantId, webhookId);
-    return this.integrationsRepository.updateWebhook(tenantId, webhookId, dto);
+    return this.integrationsRepository.updateWebhook(tenantId, webhookId, { ...dto });
   }
 
   async deleteWebhook(tenantId: string, webhookId: string) {
@@ -140,7 +140,7 @@ export class WebhooksService {
 
       if (!success && attemptNumber < this.maxRetries) {
         // Schedule retry
-        const delay = this.retryDelays[attemptNumber - 1] || this.retryDelays[this.retryDelays.length - 1];
+        const delay = this.retryDelays[attemptNumber - 1] ?? this.retryDelays[this.retryDelays.length - 1] ?? 60000;
         const nextRetryAt = new Date(Date.now() + delay);
 
         await this.integrationsRepository.updateDelivery(tenantId, delivery.id, {

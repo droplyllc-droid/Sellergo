@@ -1,16 +1,14 @@
 # Dependencies
 node_modules/
+.pnpm-store/
 
 # Build outputs
 dist/
 build/
 .next/
 out/
-
-# Package manager
-pnpm-lock.yaml
-yarn.lock
-package-lock.json
+.turbo/
+*.tsbuildinfo
 
 # Environment
 .env
@@ -31,6 +29,8 @@ Thumbs.db
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+.pnpm-debug.log*
+*.log
 
 # Prisma
 prisma/*.db
@@ -41,5 +41,4 @@ coverage/
 .nyc_output/
 
 # Misc
-*.log
-*.tsbuildinfo
+*.bundled_*.mjs

@@ -12,7 +12,7 @@ import type { JwtPayload, AuthTokens, UserRole, Permission } from '@sellergo/typ
 export interface TokenPayload {
   sub: string;
   email: string;
-  tenantId: string;
+  tenantId?: string;
   storeId?: string;
   role?: UserRole;
   permissions?: readonly Permission[];
@@ -152,8 +152,8 @@ export class TokenService {
       return 900; // Default 15 minutes
     }
 
-    const value = parseInt(match[1], 10);
-    const unit = match[2];
+    const value = parseInt(match[1]!, 10);
+    const unit = match[2]!;
 
     switch (unit) {
       case 's':

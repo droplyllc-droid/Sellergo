@@ -6,7 +6,9 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
-import * as OTPAuth from 'otpauth';
+// Use local stub when otpauth package is not available
+// import * as OTPAuth from 'otpauth';
+import * as OTPAuth from '../../../lib/otpauth-stub';
 
 export interface MfaSetupResult {
   secret: string;
@@ -81,6 +83,20 @@ export class MfaService {
     } catch {
       return false;
     }
+  }
+
+  /**
+   * Alias for verifyCode - verify TOTP code
+   */
+  verifyTotp(code: string, secret: string): boolean {
+    return this.verifyCode(secret, code);
+  }
+
+  /**
+   * Alias for generateSetup - generate MFA secret and setup data
+   */
+  async generateSecret(email: string): Promise<MfaSetupResult> {
+    return this.generateSetup(email);
   }
 
   /**

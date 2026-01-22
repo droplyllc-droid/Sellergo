@@ -22,13 +22,13 @@ export class ProductsService {
 
   async getProduct(tenantId: string, productId: string) {
     const product = await this.productsRepository.findById(tenantId, productId);
-    if (!product) throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Product not found' });
+    if (!product) throw new NotFoundException({ code: ErrorCode.RESOURCE_NOT_FOUND, message: 'Product not found' });
     return product;
   }
 
   async getProductBySlug(tenantId: string, storeId: string, slug: string) {
     const product = await this.productsRepository.findBySlug(tenantId, storeId, slug);
-    if (!product) throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Product not found' });
+    if (!product) throw new NotFoundException({ code: ErrorCode.RESOURCE_NOT_FOUND, message: 'Product not found' });
 
     // Increment view count asynchronously
     this.productsRepository.incrementViewCount(tenantId, product.id).catch(() => {});
@@ -68,7 +68,11 @@ export class ProductsService {
       categoryId: dto.categoryId,
       tags: dto.tags ?? [],
       status: dto.status ?? ProductStatus.DRAFT,
-      images: dto.images,
+      images: dto.images?.map((img, index) => ({
+        url: img.url,
+        alt: img.alt,
+        position: img.position ?? index,
+      })),
     });
   }
 

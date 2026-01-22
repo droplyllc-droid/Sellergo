@@ -21,13 +21,13 @@ export class OrdersService {
 
   async getOrder(tenantId: string, orderId: string) {
     const order = await this.ordersRepository.findById(tenantId, orderId);
-    if (!order) throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Order not found' });
+    if (!order) throw new NotFoundException({ code: ErrorCode.RESOURCE_NOT_FOUND, message: 'Order not found' });
     return order;
   }
 
   async getOrderByNumber(tenantId: string, storeId: string, orderNumber: string) {
     const order = await this.ordersRepository.findByOrderNumber(tenantId, storeId, orderNumber);
-    if (!order) throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Order not found' });
+    if (!order) throw new NotFoundException({ code: ErrorCode.RESOURCE_NOT_FOUND, message: 'Order not found' });
     return order;
   }
 
@@ -66,7 +66,7 @@ export class OrdersService {
   }
 
   async markAsPreparing(tenantId: string, orderId: string, userId?: string) {
-    return this.updateOrderStatus(tenantId, orderId, OrderStatus.PREPARING, 'Order is being prepared', userId);
+    return this.updateOrderStatus(tenantId, orderId, OrderStatus.PROCESSING, 'Order is being prepared', userId);
   }
 
   async shipOrder(tenantId: string, orderId: string, trackingNumber?: string, carrier?: string, userId?: string) {
@@ -74,7 +74,7 @@ export class OrdersService {
 
     await this.ordersRepository.update(tenantId, orderId, {
       status: OrderStatus.SHIPPED,
-      fulfillmentStatus: FulfillmentStatus.SHIPPED,
+      fulfillmentStatus: FulfillmentStatus.PARTIALLY_FULFILLED,
       shippedAt: new Date(),
       trackingNumber,
       carrier,
@@ -102,7 +102,7 @@ export class OrdersService {
 
     await this.ordersRepository.update(tenantId, orderId, {
       status: OrderStatus.DELIVERED,
-      fulfillmentStatus: FulfillmentStatus.DELIVERED,
+      fulfillmentStatus: FulfillmentStatus.FULFILLED,
       deliveredAt: new Date(),
     });
 
@@ -189,7 +189,7 @@ export class OrdersService {
 
   async sendCartRecoveryEmail(tenantId: string, cartId: string) {
     const carts = await this.ordersRepository.getAbandonedCarts(tenantId, '', { page: 1, limit: 1 });
-    const cart = carts.items.find(c => c.id === cartId);
+    const cart = carts.items.find((c: { id: string; email?: string; items: unknown[] }) => c.id === cartId);
 
     if (!cart || !cart.email) {
       throw new BadRequestException({
@@ -215,12 +215,13 @@ export class OrdersService {
   private validateStatusTransition(currentStatus: OrderStatus, newStatus: OrderStatus): void {
     const validTransitions: Record<OrderStatus, OrderStatus[]> = {
       [OrderStatus.PENDING]: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
-      [OrderStatus.CONFIRMED]: [OrderStatus.PREPARING, OrderStatus.SHIPPED, OrderStatus.CANCELLED],
-      [OrderStatus.PREPARING]: [OrderStatus.SHIPPED, OrderStatus.CANCELLED],
-      [OrderStatus.SHIPPED]: [OrderStatus.DELIVERED, OrderStatus.RETURNED],
-      [OrderStatus.DELIVERED]: [OrderStatus.RETURNED],
+      [OrderStatus.CONFIRMED]: [OrderStatus.PROCESSING, OrderStatus.SHIPPED, OrderStatus.CANCELLED],
+      [OrderStatus.PROCESSING]: [OrderStatus.SHIPPED, OrderStatus.CANCELLED],
+      [OrderStatus.SHIPPED]: [OrderStatus.IN_TRANSIT, OrderStatus.DELIVERED, OrderStatus.RETURNED],
+      [OrderStatus.IN_TRANSIT]: [OrderStatus.DELIVERED, OrderStatus.RETURNED],
+      [OrderStatus.DELIVERED]: [OrderStatus.RETURNED, OrderStatus.REFUNDED],
       [OrderStatus.CANCELLED]: [],
-      [OrderStatus.RETURNED]: [],
+      [OrderStatus.RETURNED]: [OrderStatus.REFUNDED],
       [OrderStatus.REFUNDED]: [],
     };
 

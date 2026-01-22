@@ -28,7 +28,7 @@ export class PixelsService {
   async getPixel(tenantId: string, pixelId: string) {
     const pixel = await this.integrationsRepository.getPixelById(tenantId, pixelId);
     if (!pixel) {
-      throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Pixel not found' });
+      throw new NotFoundException({ code: ErrorCode.RESOURCE_NOT_FOUND, message: 'Pixel not found' });
     }
     return pixel;
   }
@@ -36,7 +36,7 @@ export class PixelsService {
   async createPixel(tenantId: string, storeId: string, dto: CreatePixelDto) {
     // Check for existing pixel with same provider and pixelId
     const existingPixels = await this.integrationsRepository.getPixelsByProvider(tenantId, storeId, dto.provider);
-    if (existingPixels.some(p => p.pixelId === dto.pixelId)) {
+    if (existingPixels.some((p: { pixelId: string }) => p.pixelId === dto.pixelId)) {
       throw new ConflictException({ code: ErrorCode.VALIDATION_ERROR, message: 'Pixel ID already exists for this provider' });
     }
 
@@ -45,7 +45,7 @@ export class PixelsService {
 
   async updatePixel(tenantId: string, pixelId: string, dto: UpdatePixelDto) {
     await this.getPixel(tenantId, pixelId);
-    return this.integrationsRepository.updatePixel(tenantId, pixelId, dto);
+    return this.integrationsRepository.updatePixel(tenantId, pixelId, { ...dto });
   }
 
   async deletePixel(tenantId: string, pixelId: string) {
@@ -62,7 +62,7 @@ export class PixelsService {
   // Fire pixel events
   async fireEvent(tenantId: string, storeId: string, eventData: PixelEventData) {
     const pixels = await this.integrationsRepository.getPixels(tenantId, storeId);
-    const enabledPixels = pixels.filter(p => p.isEnabled);
+    const enabledPixels = pixels.filter((p: { isEnabled: boolean }) => p.isEnabled);
 
     for (const pixel of enabledPixels) {
       // Check if this event is enabled for this pixel

@@ -7,6 +7,7 @@ import {
   IsOptional,
   IsEmail,
   IsEnum,
+  IsIn,
   IsBoolean,
   IsNumber,
   IsArray,
@@ -20,6 +21,8 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import { Language, UserRole, CountryRestrictionMode } from '@sellergo/types';
+
+const SUPPORTED_LANGUAGES = ['en', 'fr', 'ar', 'es'] as const;
 
 export class CreateStoreDto {
   @ApiProperty({ example: 'My Store' })
@@ -44,9 +47,9 @@ export class CreateStoreDto {
   @Transform(({ value }) => value?.toUpperCase().trim())
   currency: string;
 
-  @ApiPropertyOptional({ enum: Language, default: Language.FR })
+  @ApiPropertyOptional({ enum: SUPPORTED_LANGUAGES, default: 'fr' })
   @IsOptional()
-  @IsEnum(Language)
+  @IsIn(SUPPORTED_LANGUAGES)
   defaultLanguage?: Language;
 
   @ApiPropertyOptional({ example: 'Africa/Tunis' })
@@ -87,9 +90,9 @@ export class UpdateStoreDto {
   @Transform(({ value }) => value?.toUpperCase().trim())
   currency?: string;
 
-  @ApiPropertyOptional({ enum: Language })
+  @ApiPropertyOptional({ enum: SUPPORTED_LANGUAGES })
   @IsOptional()
-  @IsEnum(Language)
+  @IsIn(SUPPORTED_LANGUAGES)
   defaultLanguage?: Language;
 
   @ApiPropertyOptional({ example: 'Africa/Tunis' })

@@ -22,7 +22,7 @@ export class CustomersService {
   async getCustomer(tenantId: string, customerId: string) {
     const customer = await this.customersRepository.findById(tenantId, customerId);
     if (!customer) {
-      throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Customer not found' });
+      throw new NotFoundException({ code: ErrorCode.RESOURCE_NOT_FOUND, message: 'Customer not found' });
     }
     return {
       ...customer,
@@ -88,7 +88,7 @@ export class CustomersService {
       }
     }
 
-    const updated = await this.customersRepository.update(tenantId, customerId, dto);
+    const updated = await this.customersRepository.update(tenantId, customerId, { ...dto });
     await this.invalidateCache(tenantId, customer.storeId);
 
     return this.getCustomer(tenantId, customerId);
@@ -114,7 +114,7 @@ export class CustomersService {
 
   async updateAddress(tenantId: string, customerId: string, addressId: string, dto: UpdateAddressDto) {
     await this.getCustomer(tenantId, customerId);
-    return this.customersRepository.updateAddress(tenantId, addressId, dto);
+    return this.customersRepository.updateAddress(tenantId, addressId, { ...dto });
   }
 
   async deleteAddress(tenantId: string, customerId: string, addressId: string) {
@@ -167,11 +167,11 @@ export class CustomersService {
   // Statistics
   async getStatistics(tenantId: string, storeId: string, dateFrom?: Date, dateTo?: Date) {
     const cacheKey = `customers:stats:${storeId}:${dateFrom?.toISOString() || 'all'}:${dateTo?.toISOString() || 'all'}`;
-    const cached = await this.redisService.get(cacheKey);
+    const cached = await this.redisService.getJson(cacheKey);
     if (cached) return cached;
 
     const stats = await this.customersRepository.getStatistics(tenantId, storeId, dateFrom, dateTo);
-    await this.redisService.set(cacheKey, stats, 300); // 5 minutes
+    await this.redisService.setJson(cacheKey, stats, 300); // 5 minutes
 
     return stats;
   }
@@ -185,11 +185,11 @@ export class CustomersService {
   // Top customers
   async getTopCustomers(tenantId: string, storeId: string, limit = 10) {
     const cacheKey = `customers:top:${storeId}:${limit}`;
-    const cached = await this.redisService.get(cacheKey);
+    const cached = await this.redisService.getJson(cacheKey);
     if (cached) return cached;
 
     const customers = await this.customersRepository.getTopCustomers(tenantId, storeId, limit);
-    await this.redisService.set(cacheKey, customers, 600); // 10 minutes
+    await this.redisService.setJson(cacheKey, customers, 600); // 10 minutes
 
     return customers;
   }
