@@ -7,7 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { ErrorCode } from '@youseller/types';
+import { ErrorCode } from '@sellergo/types';
 
 interface ErrorResponse {
   success: false;

@@ -2,7 +2,7 @@
  * Analytics types
  */
 
-import type { UUID, Money, DateRangeFilter } from './common';
+import type { UUID, DateRangeFilter } from './common';
 
 // Time period
 export enum TimePeriod {

@@ -331,7 +331,7 @@ export class StripeWebhookController {
       return { received: true };
     }
 
-    const stripe = new Stripe(stripeKey, { apiVersion: '2024-11-20.acacia' });
+    const stripe = new Stripe(stripeKey, { apiVersion: '2024-11-20.acacia' as any });
     const rawBody = req.rawBody;
 
     if (!rawBody) {

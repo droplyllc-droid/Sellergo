@@ -34,6 +34,7 @@ export enum Permission {
   ORDER_EXPORT = 'order:export',
 
   // Customers
+  CUSTOMER_CREATE = 'customer:create',
   CUSTOMER_READ = 'customer:read',
   CUSTOMER_UPDATE = 'customer:update',
   CUSTOMER_BLOCK = 'customer:block',
@@ -59,6 +60,7 @@ export enum Permission {
 
   // Billing
   BILLING_READ = 'billing:read',
+  BILLING_UPDATE = 'billing:update',
   BILLING_MANAGE = 'billing:manage',
 }
 

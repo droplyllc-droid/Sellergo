@@ -9,12 +9,14 @@ import {
   MinLength,
   MaxLength,
   IsOptional,
-  IsEnum,
+  IsIn,
   Matches,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { Language } from '@sellergo/types';
+import type { Language } from '@sellergo/types';
+
+const SUPPORTED_LANGUAGES = ['en', 'fr', 'ar', 'es'] as const;
 
 export class RegisterDto {
   @ApiProperty({ example: 'John', description: 'User first name' })
@@ -53,9 +55,9 @@ export class RegisterDto {
   })
   password: string;
 
-  @ApiPropertyOptional({ enum: Language, default: Language.FR })
+  @ApiPropertyOptional({ enum: SUPPORTED_LANGUAGES, default: 'fr' })
   @IsOptional()
-  @IsEnum(Language)
+  @IsIn(SUPPORTED_LANGUAGES)
   preferredLanguage?: Language;
 }
 
