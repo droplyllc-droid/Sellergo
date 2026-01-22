@@ -1,0 +1,60 @@
+{
+  "name": "@youseller/types",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./auth": {
+      "import": "./dist/auth/index.mjs",
+      "require": "./dist/auth/index.js",
+      "types": "./dist/auth/index.d.ts"
+    },
+    "./store": {
+      "import": "./dist/store/index.mjs",
+      "require": "./dist/store/index.js",
+      "types": "./dist/store/index.d.ts"
+    },
+    "./product": {
+      "import": "./dist/product/index.mjs",
+      "require": "./dist/product/index.js",
+      "types": "./dist/product/index.d.ts"
+    },
+    "./order": {
+      "import": "./dist/order/index.mjs",
+      "require": "./dist/order/index.js",
+      "types": "./dist/order/index.d.ts"
+    },
+    "./customer": {
+      "import": "./dist/customer/index.mjs",
+      "require": "./dist/customer/index.js",
+      "types": "./dist/customer/index.d.ts"
+    },
+    "./billing": {
+      "import": "./dist/billing/index.mjs",
+      "require": "./dist/billing/index.js",
+      "types": "./dist/billing/index.d.ts"
+    },
+    "./integration": {
+      "import": "./dist/integration/index.mjs",
+      "require": "./dist/integration/index.js",
+      "types": "./dist/integration/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.3.3"
+  }
+}
