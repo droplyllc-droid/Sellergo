@@ -10,6 +10,11 @@
     "experimentalDecorators": true,
     "strictPropertyInitialization": false,
     "noImplicitAny": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "exactOptionalPropertyTypes": false,
+    "noPropertyAccessFromIndexSignature": false,
+    "noImplicitOverride": false,
     "paths": {
       "@/*": ["src/*"]
     }
