@@ -40,7 +40,6 @@ export class DatabaseService
 
     // Log slow queries in development
     if (process.env['NODE_ENV'] === 'development') {
-      // @ts-expect-error - Prisma event typing
       this.$on('query', (e: Prisma.QueryEvent) => {
         if (e.duration > 100) {
           this.logger.warn(`Slow query (${e.duration}ms): ${e.query}`);
@@ -58,7 +57,7 @@ export class DatabaseService
    * Get a tenant-scoped database client
    * Note: For proper RLS, use withTenantTransaction instead
    */
-  async withTenant(tenantId: string): Promise<this> {
+  async withTenant(_tenantId: string): Promise<this> {
     // TODO: Implement proper RLS with session variables
     // For now, return the client directly
     // The tenant isolation should be enforced at query level
@@ -92,7 +91,7 @@ export class DatabaseService
   /**
    * Execute a transaction with custom options
    */
-  async transaction<T>(
+  async executeTransaction<T>(
     callback: (tx: Prisma.TransactionClient) => Promise<T>,
     options?: {
       maxWait?: number;

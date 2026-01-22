@@ -18,7 +18,8 @@
     }
   },
   "scripts": {
-    "build": "tsup && pnpm db:generate",
+    "build": "tsup",
+    "build:full": "pnpm db:generate && tsup",
     "dev": "tsup --watch",
     "clean": "rm -rf dist node_modules/.prisma",
     "db:generate": "prisma generate",
@@ -31,10 +32,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@prisma/client": "^5.9.0"
+    "@prisma/client": "^7.3.0"
   },
   "devDependencies": {
-    "prisma": "^5.9.0",
+    "prisma": "^7.3.0",
     "tsup": "^8.0.0",
     "tsx": "^4.7.0",
     "typescript": "^5.3.3"

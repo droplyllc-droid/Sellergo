@@ -8,7 +8,7 @@ import type {
   UserId,
   ImageAsset,
 } from './common';
-import type { UserRole, Permission } from './auth';
+import { UserRole, Permission } from './auth';
 
 // Team member status
 export enum TeamMemberStatus {
