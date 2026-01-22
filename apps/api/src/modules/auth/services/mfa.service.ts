@@ -84,6 +84,20 @@ export class MfaService {
   }
 
   /**
+   * Alias for verifyCode - verify TOTP code
+   */
+  verifyTotp(code: string, secret: string): boolean {
+    return this.verifyCode(secret, code);
+  }
+
+  /**
+   * Alias for generateSetup - generate MFA secret and setup data
+   */
+  async generateSecret(email: string): Promise<MfaSetupResult> {
+    return this.generateSetup(email);
+  }
+
+  /**
    * Verify a backup code
    */
   verifyBackupCode(

@@ -28,7 +28,7 @@ export class WebhooksService {
   async getWebhook(tenantId: string, webhookId: string) {
     const webhook = await this.integrationsRepository.getWebhookById(tenantId, webhookId);
     if (!webhook) {
-      throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Webhook not found' });
+      throw new NotFoundException({ code: ErrorCode.RESOURCE_NOT_FOUND, message: 'Webhook not found' });
     }
     return webhook;
   }

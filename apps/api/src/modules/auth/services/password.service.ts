@@ -10,12 +10,13 @@ import * as crypto from 'crypto';
 @Injectable()
 export class PasswordService {
   private readonly MIN_PASSWORD_LENGTH = 12;
-  private readonly ARGON2_OPTIONS: argon2.Options = {
+  private readonly ARGON2_OPTIONS: argon2.Options & { raw?: false } = {
     type: argon2.argon2id,
     memoryCost: 65536, // 64 MB
     timeCost: 3,
     parallelism: 4,
     hashLength: 32,
+    raw: false,
   };
 
   /**

@@ -84,7 +84,7 @@ export class DomainsService {
     const domain = domains.find((d) => d.id === domainId);
 
     if (!domain) {
-      throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Domain not found' });
+      throw new NotFoundException({ code: ErrorCode.RESOURCE_NOT_FOUND, message: 'Domain not found' });
     }
 
     if (domain.isVerified) {
@@ -122,7 +122,7 @@ export class DomainsService {
     const domains = await this.storesRepository.getDomains(tenantId, storeId);
     const domain = domains.find((d) => d.id === domainId);
 
-    if (!domain) throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Domain not found' });
+    if (!domain) throw new NotFoundException({ code: ErrorCode.RESOURCE_NOT_FOUND, message: 'Domain not found' });
     if (!domain.isVerified) throw new BadRequestException({ code: ErrorCode.VALIDATION_ERROR, message: 'Domain must be verified first' });
 
     const currentPrimary = domains.find((d) => d.isPrimary);
@@ -137,7 +137,7 @@ export class DomainsService {
     const domains = await this.storesRepository.getDomains(tenantId, '');
     const domain = domains.find((d) => d.id === domainId);
 
-    if (!domain) throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Domain not found' });
+    if (!domain) throw new NotFoundException({ code: ErrorCode.RESOURCE_NOT_FOUND, message: 'Domain not found' });
     if (domain.type === 'subdomain') throw new BadRequestException({ code: ErrorCode.VALIDATION_ERROR, message: 'Cannot delete subdomain' });
     if (domain.isPrimary) throw new BadRequestException({ code: ErrorCode.VALIDATION_ERROR, message: 'Cannot delete primary domain' });
 

@@ -28,7 +28,7 @@ export class PixelsService {
   async getPixel(tenantId: string, pixelId: string) {
     const pixel = await this.integrationsRepository.getPixelById(tenantId, pixelId);
     if (!pixel) {
-      throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Pixel not found' });
+      throw new NotFoundException({ code: ErrorCode.RESOURCE_NOT_FOUND, message: 'Pixel not found' });
     }
     return pixel;
   }

@@ -19,7 +19,7 @@ export class AnalyticsService {
     const previousRange = this.getPreviousRange(dateRange);
 
     const cacheKey = `analytics:dashboard:${storeId}:${period}:${dateRange.startDate.toISOString()}`;
-    const cached = await this.redisService.get(cacheKey);
+    const cached = await this.redisService.getJson(cacheKey);
     if (cached) return cached;
 
     const [sales, orders, customers, products, conversion] = await Promise.all([
@@ -41,7 +41,7 @@ export class AnalyticsService {
     };
 
     // Cache for 5 minutes
-    await this.redisService.set(cacheKey, result, 300);
+    await this.redisService.setJson(cacheKey, result, 300);
 
     return result;
   }

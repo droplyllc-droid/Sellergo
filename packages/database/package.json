@@ -1,5 +1,5 @@
 {
-  "name": "@youseller/database",
+  "name": "@sellergo/database",
   "version": "1.0.0",
   "private": true,
   "main": "./dist/index.js",
@@ -18,7 +18,7 @@
     }
   },
   "scripts": {
-    "build": "tsup && pnpm db:generate",
+    "build": "tsup",
     "dev": "tsup --watch",
     "clean": "rm -rf dist node_modules/.prisma",
     "db:generate": "prisma generate",

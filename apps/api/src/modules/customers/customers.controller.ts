@@ -121,7 +121,7 @@ export class CustomersController {
   }
 
   @Post()
-  @RequirePermissions(Permission.CUSTOMER_CREATE)
+  @RequirePermissions(Permission.CUSTOMER_UPDATE)
   @ApiOperation({ summary: 'Create customer' })
   @ApiResponse({ status: 201, description: 'Customer created' })
   async createCustomer(

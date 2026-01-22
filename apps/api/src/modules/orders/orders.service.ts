@@ -21,13 +21,13 @@ export class OrdersService {
 
   async getOrder(tenantId: string, orderId: string) {
     const order = await this.ordersRepository.findById(tenantId, orderId);
-    if (!order) throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Order not found' });
+    if (!order) throw new NotFoundException({ code: ErrorCode.RESOURCE_NOT_FOUND, message: 'Order not found' });
     return order;
   }
 
   async getOrderByNumber(tenantId: string, storeId: string, orderNumber: string) {
     const order = await this.ordersRepository.findByOrderNumber(tenantId, storeId, orderNumber);
-    if (!order) throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Order not found' });
+    if (!order) throw new NotFoundException({ code: ErrorCode.RESOURCE_NOT_FOUND, message: 'Order not found' });
     return order;
   }
 

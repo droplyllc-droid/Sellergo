@@ -36,7 +36,7 @@ export class CategoriesService {
 
   async getCategory(tenantId: string, categoryId: string) {
     const category = await this.productsRepository.getCategoryById(tenantId, categoryId);
-    if (!category) throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Category not found' });
+    if (!category) throw new NotFoundException({ code: ErrorCode.RESOURCE_NOT_FOUND, message: 'Category not found' });
     return category;
   }
 

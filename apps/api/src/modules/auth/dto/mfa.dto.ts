@@ -16,6 +16,11 @@ export class VerifyMfaDto {
   code: string;
 }
 
+// Aliases for compatibility
+export class MfaSetupDto {}
+
+export class MfaVerifyDto extends VerifyMfaDto {}
+
 export class VerifyMfaBackupDto {
   @ApiProperty({ example: 'ABCD-1234', description: 'Backup code' })
   @IsString()

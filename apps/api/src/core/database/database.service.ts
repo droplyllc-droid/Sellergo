@@ -1,5 +1,5 @@
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
-import { PrismaClient, Prisma } from '@youseller/database';
+import { PrismaClient, Prisma } from '@sellergo/database';
 
 export interface TenantContext {
   tenantId: string;
@@ -27,6 +27,14 @@ export class DatabaseService
     });
   }
 
+  /**
+   * Getter to allow `this.db.prisma.xxx` pattern
+   * Returns the DatabaseService instance itself since it extends PrismaClient
+   */
+  get prisma(): this {
+    return this;
+  }
+
   async onModuleInit(): Promise<void> {
     await this.$connect();
     this.logger.log('Database connected');
@@ -50,12 +58,31 @@ export class DatabaseService
   /**
    * Execute operations within a tenant context
    * This sets the PostgreSQL session variable for RLS
+   *
+   * Can be called in two ways:
+   * 1. withTenant(tenantId) - returns the DatabaseService for simple queries
+   * 2. withTenant(context, callback) - executes callback in transaction with RLS
    */
-  async withTenant<T>(
+  withTenant(tenantId: string): Promise<this>;
+  withTenant<T>(
     context: TenantContext,
     callback: (tx: Prisma.TransactionClient) => Promise<T>
-  ): Promise<T> {
-    return this.$transaction(async (tx) => {
+  ): Promise<T>;
+  async withTenant<T>(
+    contextOrTenantId: TenantContext | string,
+    callback?: (tx: Prisma.TransactionClient) => Promise<T>
+  ): Promise<this | T> {
+    // Simple form: just return self for basic queries (tenant filtering done in queries)
+    if (typeof contextOrTenantId === 'string' && !callback) {
+      return this;
+    }
+
+    // Full form: execute in transaction with RLS context
+    const context = typeof contextOrTenantId === 'string'
+      ? { tenantId: contextOrTenantId }
+      : contextOrTenantId;
+
+    return this.$transaction(async (tx: Prisma.TransactionClient) => {
       // Set tenant context for RLS
       await tx.$executeRaw`SELECT set_config('app.tenant_id', ${context.tenantId}, true)`;
 
@@ -67,26 +94,23 @@ export class DatabaseService
         await tx.$executeRaw`SELECT set_config('app.store_id', ${context.storeId}, true)`;
       }
 
-      return callback(tx);
+      return callback!(tx);
     });
   }
 
   /**
    * Execute a transaction with custom options
    */
-  async transaction<T>(
+  async runTransaction<T>(
     callback: (tx: Prisma.TransactionClient) => Promise<T>,
     options?: {
       maxWait?: number;
       timeout?: number;
-      isolationLevel?: Prisma.TransactionIsolationLevel;
     }
   ): Promise<T> {
     return this.$transaction(callback, {
       maxWait: options?.maxWait ?? 5000,
       timeout: options?.timeout ?? 10000,
-      isolationLevel:
-        options?.isolationLevel ?? Prisma.TransactionIsolationLevel.ReadCommitted,
     });
   }
 

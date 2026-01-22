@@ -18,7 +18,7 @@ export class ReviewsService {
   async createReview(tenantId: string, storeId: string, productId: string, dto: CreateReviewDto, customerId?: string, orderId?: string) {
     // Check if product exists
     const product = await this.productsRepository.findById(tenantId, productId);
-    if (!product) throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Product not found' });
+    if (!product) throw new NotFoundException({ code: ErrorCode.RESOURCE_NOT_FOUND, message: 'Product not found' });
 
     const review = await this.productsRepository.createReview(tenantId, storeId, productId, {
       customerId,

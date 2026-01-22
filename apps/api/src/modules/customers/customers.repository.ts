@@ -110,7 +110,7 @@ export class CustomersRepository {
     ]);
 
     return {
-      items: items.map(c => ({
+      items: items.map((c: { firstName: string | null; lastName: string | null; phone: string; [key: string]: unknown }) => ({
         ...c,
         fullName: [c.firstName, c.lastName].filter(Boolean).join(' ') || c.phone,
       })),

@@ -64,6 +64,15 @@ function isTenantScopedModel(model: string): model is TenantScopedModel {
   return TENANT_SCOPED_MODELS.includes(model as TenantScopedModel);
 }
 
+// Middleware params type
+interface MiddlewareParams {
+  model?: string;
+  action: string;
+  args: Record<string, unknown>;
+  dataPath: string[];
+  runInTransaction: boolean;
+}
+
 /**
  * Create a tenant-scoped Prisma client
  * This applies middleware to enforce tenant isolation on all queries
@@ -74,7 +83,7 @@ export function createTenantClient(context: TenantContext): PrismaClient {
   });
 
   // Middleware to enforce tenant isolation
-  client.$use(async (params, next) => {
+  client.$use(async (params: MiddlewareParams, next: (params: MiddlewareParams) => Promise<unknown>) => {
     const { model, action, args } = params;
 
     // Skip if not a tenant-scoped model
@@ -84,21 +93,21 @@ export function createTenantClient(context: TenantContext): PrismaClient {
 
     // Apply tenant filter for read operations
     if (['findUnique', 'findFirst', 'findMany', 'count', 'aggregate', 'groupBy'].includes(action)) {
-      if (!args.where) {
-        args.where = {};
+      if (!args['where']) {
+        args['where'] = {};
       }
-      args.where.tenantId = context.tenantId;
+      (args['where'] as Record<string, unknown>)['tenantId'] = context.tenantId;
     }
 
     // Apply tenant ID for create operations
     if (['create', 'createMany'].includes(action)) {
       if (action === 'create') {
-        args.data = {
-          ...args.data,
+        args['data'] = {
+          ...(args['data'] as Record<string, unknown>),
           tenantId: context.tenantId,
         };
-      } else if (action === 'createMany' && Array.isArray(args.data)) {
-        args.data = args.data.map((item: Record<string, unknown>) => ({
+      } else if (action === 'createMany' && Array.isArray(args['data'])) {
+        args['data'] = (args['data'] as Record<string, unknown>[]).map((item) => ({
           ...item,
           tenantId: context.tenantId,
         }));
@@ -107,14 +116,14 @@ export function createTenantClient(context: TenantContext): PrismaClient {
 
     // Apply tenant filter for update operations
     if (['update', 'updateMany', 'upsert'].includes(action)) {
-      if (!args.where) {
-        args.where = {};
+      if (!args['where']) {
+        args['where'] = {};
       }
-      args.where.tenantId = context.tenantId;
+      (args['where'] as Record<string, unknown>)['tenantId'] = context.tenantId;
 
-      if (action === 'upsert' && args.create) {
-        args.create = {
-          ...args.create,
+      if (action === 'upsert' && args['create']) {
+        args['create'] = {
+          ...(args['create'] as Record<string, unknown>),
           tenantId: context.tenantId,
         };
       }
@@ -122,10 +131,10 @@ export function createTenantClient(context: TenantContext): PrismaClient {
 
     // Apply tenant filter for delete operations
     if (['delete', 'deleteMany'].includes(action)) {
-      if (!args.where) {
-        args.where = {};
+      if (!args['where']) {
+        args['where'] = {};
       }
-      args.where.tenantId = context.tenantId;
+      (args['where'] as Record<string, unknown>)['tenantId'] = context.tenantId;
     }
 
     return next(params);
@@ -142,13 +151,11 @@ export async function withTransaction<T>(
   options?: {
     maxWait?: number;
     timeout?: number;
-    isolationLevel?: Prisma.TransactionIsolationLevel;
   }
 ): Promise<T> {
   return prisma.$transaction(fn, {
     maxWait: options?.maxWait ?? 5000,
     timeout: options?.timeout ?? 10000,
-    isolationLevel: options?.isolationLevel ?? Prisma.TransactionIsolationLevel.ReadCommitted,
   });
 }
 
@@ -161,7 +168,6 @@ export async function withTenantTransaction<T>(
   options?: {
     maxWait?: number;
     timeout?: number;
-    isolationLevel?: Prisma.TransactionIsolationLevel;
   }
 ): Promise<T> {
   const tenantClient = createTenantClient(context);
@@ -170,7 +176,6 @@ export async function withTenantTransaction<T>(
     return await tenantClient.$transaction(fn, {
       maxWait: options?.maxWait ?? 5000,
       timeout: options?.timeout ?? 10000,
-      isolationLevel: options?.isolationLevel ?? Prisma.TransactionIsolationLevel.ReadCommitted,
     });
   } finally {
     await tenantClient.$disconnect();
@@ -179,28 +184,7 @@ export async function withTenantTransaction<T>(
 
 // Re-export Prisma types
 export { Prisma, PrismaClient };
-export type {
-  User,
-  Session,
-  Tenant,
-  Store,
-  StoreMember,
-  Product,
-  ProductImage,
-  ProductVariant,
-  Category,
-  Order,
-  OrderItem,
-  Customer,
-  CustomerBlock,
-  BillingAccount,
-  Transaction,
-  Invoice,
-  AdPixel,
-  Webhook,
-  InstalledApp,
-  DeliveryCarrier,
-  CarrierConnection,
-  AnalyticsEvent,
-  ActivityLog,
-} from '@prisma/client';
+
+// Note: Model types (User, Store, etc.) are exported from @prisma/client
+// after `prisma generate` has been run. Import them directly from '@prisma/client'
+// or from the main index.ts export.

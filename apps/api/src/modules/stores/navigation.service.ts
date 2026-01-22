@@ -41,7 +41,7 @@ export class NavigationService {
     const menu = menus.find((m) => m.id === menuId);
 
     if (!menu) {
-      throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Navigation menu not found' });
+      throw new NotFoundException({ code: ErrorCode.RESOURCE_NOT_FOUND, message: 'Navigation menu not found' });
     }
 
     const updateData: { title?: string; items?: Array<{ id: string; label: string; url: string; openInNewTab: boolean; position: number }> } = {};
@@ -65,7 +65,7 @@ export class NavigationService {
     const menu = menus.find((m) => m.id === menuId);
 
     if (!menu) {
-      throw new NotFoundException({ code: ErrorCode.NOT_FOUND, message: 'Navigation menu not found' });
+      throw new NotFoundException({ code: ErrorCode.RESOURCE_NOT_FOUND, message: 'Navigation menu not found' });
     }
 
     return this.storesRepository.deleteNavigationMenu(tenantId, menuId);

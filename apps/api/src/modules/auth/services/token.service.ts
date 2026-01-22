@@ -12,7 +12,7 @@ import type { JwtPayload, AuthTokens, UserRole, Permission } from '@sellergo/typ
 export interface TokenPayload {
   sub: string;
   email: string;
-  tenantId: string;
+  tenantId?: string;
   storeId?: string;
   role?: UserRole;
   permissions?: readonly Permission[];
@@ -148,12 +148,12 @@ export class TokenService {
    */
   private parseExpiryToSeconds(expiry: string): number {
     const match = expiry.match(/^(\d+)([smhd])$/);
-    if (!match) {
+    if (!match || !match[1]) {
       return 900; // Default 15 minutes
     }
 
     const value = parseInt(match[1], 10);
-    const unit = match[2];
+    const unit = match[2] || 'm';
 
     switch (unit) {
       case 's':
@@ -185,6 +185,13 @@ export class TokenService {
   }
 
   /**
+   * Alias for generateEmailVerificationToken
+   */
+  async generateVerificationToken(_email: string): Promise<string> {
+    return this.generateEmailVerificationToken();
+  }
+
+  /**
    * Generate password reset token
    */
   generatePasswordResetToken(): string {
@@ -196,5 +203,43 @@ export class TokenService {
    */
   generateInviteToken(): string {
     return crypto.randomBytes(32).toString('hex');
+  }
+
+  /**
+   * Generate access token only
+   */
+  async generateAccessToken(payload: TokenPayload): Promise<string> {
+    const tokens = await this.generateTokens(payload);
+    return tokens.accessToken;
+  }
+
+  /**
+   * Generate refresh token only
+   */
+  async generateRefreshToken(payload: Partial<TokenPayload>): Promise<string> {
+    const fullPayload: TokenPayload = {
+      sub: payload.sub || '',
+      email: payload.email || '',
+      tenantId: payload.tenantId || '',
+      ...payload,
+    };
+    const tokens = await this.generateTokens(fullPayload);
+    return tokens.refreshToken;
+  }
+
+  /**
+   * Get access token expiry in seconds
+   */
+  getAccessTokenExpirySeconds(): number {
+    return this.parseExpiryToSeconds(this.accessTokenExpiry);
+  }
+
+  /**
+   * Get refresh token expiry in milliseconds
+   */
+  getRefreshTokenExpiryMs(_rememberMe: boolean = false): number {
+    const seconds = this.parseExpiryToSeconds(this.refreshTokenExpiry);
+    // If remember me, extend to 30 days
+    return (_rememberMe ? seconds * 4 : seconds) * 1000;
   }
 }

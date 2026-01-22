@@ -36,7 +36,7 @@ export class StoresService {
     const store = await this.storesRepository.findById(tenantId, storeId);
     if (!store) {
       throw new NotFoundException({
-        code: ErrorCode.NOT_FOUND,
+        code: ErrorCode.RESOURCE_NOT_FOUND,
         message: 'Store not found',
       });
     }
@@ -50,7 +50,7 @@ export class StoresService {
     const store = await this.storesRepository.findBySlug(slug);
     if (!store) {
       throw new NotFoundException({
-        code: ErrorCode.NOT_FOUND,
+        code: ErrorCode.RESOURCE_NOT_FOUND,
         message: 'Store not found',
       });
     }

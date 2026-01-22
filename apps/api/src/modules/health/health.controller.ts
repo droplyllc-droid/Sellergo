@@ -1,21 +1,21 @@
 /**
- * Health Controller
+ * Health Controller - Basic health check without @nestjs/terminus
  */
 
 import { Controller, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import {
-  HealthCheck,
-  HealthCheckService,
-  HealthCheckResult,
-  PrismaHealthIndicator,
-  DiskHealthIndicator,
-  MemoryHealthIndicator,
-} from '@nestjs/terminus';
-import { PrismaClient } from '@prisma/client';
+import { DatabaseService } from '../../core/database/database.service';
+import { RedisService } from '../../core/redis/redis.service';
 import { Public } from '../auth/decorators/public.decorator';
 import { SkipStoreCheck } from '../auth/decorators/skip-store-check.decorator';
 import { SkipTenantCheck } from '../auth/decorators/skip-tenant-check.decorator';
+
+interface HealthCheckResult {
+  status: 'ok' | 'error';
+  info?: Record<string, { status: string }>;
+  error?: Record<string, { status: string; message?: string }>;
+  details?: Record<string, { status: string; message?: string }>;
+}
 
 @ApiTags('Health')
 @Controller('health')
@@ -23,59 +23,55 @@ import { SkipTenantCheck } from '../auth/decorators/skip-tenant-check.decorator'
 @SkipStoreCheck()
 @SkipTenantCheck()
 export class HealthController {
-  private prisma: PrismaClient;
-
   constructor(
-    private health: HealthCheckService,
-    private prismaHealth: PrismaHealthIndicator,
-    private disk: DiskHealthIndicator,
-    private memory: MemoryHealthIndicator,
-  ) {
-    this.prisma = new PrismaClient();
-  }
+    private readonly db: DatabaseService,
+    private readonly redis: RedisService,
+  ) {}
 
   @Get()
-  @HealthCheck()
   @ApiOperation({ summary: 'Basic health check' })
   @ApiResponse({ status: 200, description: 'Service is healthy' })
-  @ApiResponse({ status: 503, description: 'Service is unhealthy' })
   async check(): Promise<HealthCheckResult> {
-    return this.health.check([
-      () => this.prismaHealth.pingCheck('database', this.prisma),
-    ]);
+    const checks: Record<string, { status: string; message?: string }> = {};
+    let hasError = false;
+
+    // Check database
+    try {
+      const dbOk = await this.db.healthCheck();
+      checks['database'] = { status: dbOk ? 'up' : 'down' };
+      if (!dbOk) hasError = true;
+    } catch (error) {
+      checks['database'] = { status: 'down', message: error instanceof Error ? error.message : 'Unknown error' };
+      hasError = true;
+    }
+
+    // Check Redis
+    try {
+      const redisOk = await this.redis.healthCheck();
+      checks['redis'] = { status: redisOk ? 'up' : 'down' };
+      if (!redisOk) hasError = true;
+    } catch (error) {
+      checks['redis'] = { status: 'down', message: error instanceof Error ? error.message : 'Unknown error' };
+      hasError = true;
+    }
+
+    return {
+      status: hasError ? 'error' : 'ok',
+      details: checks,
+    };
   }
 
-  @Get('liveness')
+  @Get('live')
   @ApiOperation({ summary: 'Liveness probe' })
   @ApiResponse({ status: 200, description: 'Service is alive' })
-  liveness() {
-    return { status: 'ok', timestamp: new Date().toISOString() };
+  async liveness(): Promise<{ status: string }> {
+    return { status: 'ok' };
   }
 
-  @Get('readiness')
-  @HealthCheck()
+  @Get('ready')
   @ApiOperation({ summary: 'Readiness probe' })
   @ApiResponse({ status: 200, description: 'Service is ready' })
-  @ApiResponse({ status: 503, description: 'Service is not ready' })
   async readiness(): Promise<HealthCheckResult> {
-    return this.health.check([
-      () => this.prismaHealth.pingCheck('database', this.prisma),
-      () => this.memory.checkHeap('memory_heap', 300 * 1024 * 1024), // 300MB
-      () => this.memory.checkRSS('memory_rss', 500 * 1024 * 1024), // 500MB
-    ]);
-  }
-
-  @Get('detailed')
-  @HealthCheck()
-  @ApiOperation({ summary: 'Detailed health check' })
-  @ApiResponse({ status: 200, description: 'Detailed health status' })
-  @ApiResponse({ status: 503, description: 'Service is unhealthy' })
-  async detailed(): Promise<HealthCheckResult> {
-    return this.health.check([
-      () => this.prismaHealth.pingCheck('database', this.prisma),
-      () => this.memory.checkHeap('memory_heap', 300 * 1024 * 1024),
-      () => this.memory.checkRSS('memory_rss', 500 * 1024 * 1024),
-      () => this.disk.checkStorage('storage', { path: '/', thresholdPercent: 0.9 }),
-    ]);
+    return this.check();
   }
 }

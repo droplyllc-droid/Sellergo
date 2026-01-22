@@ -361,4 +361,11 @@ export class RedisService implements OnModuleDestroy {
     }
     await this.del(`user:${userId}:sessions`);
   }
+
+  /**
+   * Get keys matching a pattern
+   */
+  async keys(pattern: string): Promise<string[]> {
+    return this.client.keys(pattern);
+  }
 }

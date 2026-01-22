@@ -11,11 +11,13 @@ export enum QueueName {
   BILLING = 'billing',
   NOTIFICATIONS = 'notifications',
   INTEGRATIONS = 'integrations',
+  ORDER = 'order',
+  DOMAIN = 'domain',
 }
 
 // Job types
 export interface EmailJob {
-  type: 'welcome' | 'verification' | 'password-reset' | 'order-confirmation' | 'team-invite';
+  type: 'welcome' | 'verification' | 'password-reset' | 'order-confirmation' | 'team-invite' | 'team-invitation';
   to: string;
   data: Record<string, unknown>;
 }
@@ -34,6 +36,7 @@ export interface AnalyticsJob {
 
 export interface BillingJob {
   type: 'charge-fee' | 'generate-invoice' | 'sync-stripe';
+  storeId?: string;
   data: Record<string, unknown>;
 }
 
@@ -43,7 +46,44 @@ export interface NotificationJob {
   data: Record<string, unknown>;
 }
 
-export type JobData = EmailJob | WebhookJob | AnalyticsJob | BillingJob | NotificationJob;
+export interface OrderJob {
+  orderId: string;
+  storeId?: string;
+  trackingNumber?: string;
+  carrier?: string;
+  data?: Record<string, unknown>;
+}
+
+export interface DomainJob {
+  domainId: string;
+  domain: string;
+  data?: Record<string, unknown>;
+}
+
+export interface IntegrationJob {
+  pixelId?: string;
+  webhookId?: string;
+  storeId?: string;
+  event?: string;
+  data?: Record<string, unknown>;
+}
+
+export interface CartJob {
+  cartId: string;
+  storeId?: string;
+  data?: Record<string, unknown>;
+}
+
+export type JobData =
+  | EmailJob
+  | WebhookJob
+  | AnalyticsJob
+  | BillingJob
+  | NotificationJob
+  | OrderJob
+  | DomainJob
+  | IntegrationJob
+  | CartJob;
 
 @Injectable()
 export class QueueService implements OnModuleDestroy {
@@ -69,7 +109,8 @@ export class QueueService implements OnModuleDestroy {
 
   private initializeQueue(name: QueueName): void {
     const queue = new Queue(name, {
-      connection: this.connection,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      connection: this.connection as any,
       defaultJobOptions: {
         removeOnComplete: {
           age: 3600, // Remove completed jobs after 1 hour
@@ -87,7 +128,8 @@ export class QueueService implements OnModuleDestroy {
     });
 
     const queueEvents = new QueueEvents(name, {
-      connection: this.connection,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      connection: this.connection as any,
     });
 
     // Log queue events
@@ -128,8 +170,17 @@ export class QueueService implements OnModuleDestroy {
   /**
    * Get a queue by name
    */
-  getQueue(name: QueueName): Queue {
-    const queue = this.queues.get(name);
+  getQueue(name: QueueName | string): Queue {
+    // Support both enum and string queue names
+    const queueName = name as QueueName;
+    let queue = this.queues.get(queueName);
+
+    // If not found, try to initialize it dynamically
+    if (!queue) {
+      this.initializeQueue(queueName);
+      queue = this.queues.get(queueName);
+    }
+
     if (!queue) {
       throw new Error(`Queue ${name} not found`);
     }
@@ -140,7 +191,7 @@ export class QueueService implements OnModuleDestroy {
    * Add a job to a queue
    */
   async addJob<T extends JobData>(
-    queueName: QueueName,
+    queueName: QueueName | string,
     jobName: string,
     data: T,
     options?: JobsOptions
@@ -153,7 +204,7 @@ export class QueueService implements OnModuleDestroy {
    * Add a job with delay
    */
   async addDelayedJob<T extends JobData>(
-    queueName: QueueName,
+    queueName: QueueName | string,
     jobName: string,
     data: T,
     delayMs: number,
@@ -169,7 +220,7 @@ export class QueueService implements OnModuleDestroy {
    * Add a scheduled/recurring job
    */
   async addScheduledJob<T extends JobData>(
-    queueName: QueueName,
+    queueName: QueueName | string,
     jobName: string,
     data: T,
     cron: string,
@@ -187,17 +238,18 @@ export class QueueService implements OnModuleDestroy {
    * Register a worker for a queue
    */
   registerWorker<T extends JobData>(
-    queueName: QueueName,
+    queueName: QueueName | string,
     processor: (job: Job<T>) => Promise<void>
   ): Worker<T> {
-    const existingWorker = this.workers.get(queueName);
+    const queueKey = queueName as QueueName;
+    const existingWorker = this.workers.get(queueKey);
     if (existingWorker) {
       this.logger.warn(`Worker for queue ${queueName} already exists, replacing`);
       existingWorker.close();
     }
 
     const worker = new Worker<T>(
-      queueName,
+      queueName as string,
       async (job) => {
         const startTime = Date.now();
         this.logger.debug(`Processing job ${job.id} in queue ${queueName}`);
@@ -218,7 +270,8 @@ export class QueueService implements OnModuleDestroy {
         }
       },
       {
-        connection: this.connection,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      connection: this.connection as any,
         concurrency: 5,
         limiter: {
           max: 10,
@@ -231,7 +284,8 @@ export class QueueService implements OnModuleDestroy {
       this.logger.error(`Worker error in queue ${queueName}:`, error);
     });
 
-    this.workers.set(queueName, worker as Worker<JobData>);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    this.workers.set(queueKey, worker as any);
     return worker;
   }
 
@@ -239,7 +293,7 @@ export class QueueService implements OnModuleDestroy {
    * Get job by ID
    */
   async getJob<T extends JobData>(
-    queueName: QueueName,
+    queueName: QueueName | string,
     jobId: string
   ): Promise<Job<T> | undefined> {
     const queue = this.getQueue(queueName);
@@ -249,7 +303,7 @@ export class QueueService implements OnModuleDestroy {
   /**
    * Get queue statistics
    */
-  async getQueueStats(queueName: QueueName): Promise<{
+  async getQueueStats(queueName: QueueName | string): Promise<{
     waiting: number;
     active: number;
     completed: number;
@@ -271,7 +325,7 @@ export class QueueService implements OnModuleDestroy {
   /**
    * Clear all jobs from a queue
    */
-  async clearQueue(queueName: QueueName): Promise<void> {
+  async clearQueue(queueName: QueueName | string): Promise<void> {
     const queue = this.getQueue(queueName);
     await queue.drain();
     this.logger.log(`Queue ${queueName} cleared`);
@@ -280,7 +334,7 @@ export class QueueService implements OnModuleDestroy {
   /**
    * Retry failed jobs
    */
-  async retryFailedJobs(queueName: QueueName): Promise<number> {
+  async retryFailedJobs(queueName: QueueName | string): Promise<number> {
     const queue = this.getQueue(queueName);
     const failedJobs = await queue.getFailed();
 
