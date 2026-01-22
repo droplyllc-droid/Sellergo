@@ -148,12 +148,12 @@ export class TokenService {
    */
   private parseExpiryToSeconds(expiry: string): number {
     const match = expiry.match(/^(\d+)([smhd])$/);
-    if (!match || !match[1]) {
+    if (!match) {
       return 900; // Default 15 minutes
     }
 
     const value = parseInt(match[1], 10);
-    const unit = match[2] || 'm';
+    const unit = match[2];
 
     switch (unit) {
       case 's':
@@ -185,10 +185,67 @@ export class TokenService {
   }
 
   /**
-   * Alias for generateEmailVerificationToken
+   * Generate verification token (alias)
    */
   async generateVerificationToken(_email: string): Promise<string> {
     return this.generateEmailVerificationToken();
+  }
+
+  /**
+   * Get refresh token expiry in milliseconds
+   */
+  getRefreshTokenExpiryMs(rememberMe: boolean = false): number {
+    const seconds = this.parseExpiryToSeconds(this.refreshTokenExpiry);
+    // If remember me, extend by 30 days
+    const multiplier = rememberMe ? 30 : 1;
+    return seconds * 1000 * multiplier;
+  }
+
+  /**
+   * Get access token expiry in seconds
+   */
+  getAccessTokenExpirySeconds(): number {
+    return this.parseExpiryToSeconds(this.accessTokenExpiry);
+  }
+
+  /**
+   * Generate access token only
+   */
+  async generateAccessToken(payload: TokenPayload): Promise<string> {
+    const jti = this.generateTokenId();
+    const accessTokenPayload: Omit<JwtPayload, 'iat' | 'exp'> = {
+      sub: payload.sub as JwtPayload['sub'],
+      email: payload.email,
+      tenantId: payload.tenantId as JwtPayload['tenantId'],
+      storeId: payload.storeId as JwtPayload['storeId'],
+      role: payload.role,
+      permissions: payload.permissions,
+      jti,
+      type: 'access',
+    };
+
+    return this.jwtService.signAsync(accessTokenPayload, {
+      secret: this.accessTokenSecret,
+      expiresIn: this.accessTokenExpiry,
+    });
+  }
+
+  /**
+   * Generate refresh token only
+   */
+  async generateRefreshToken(payload: TokenPayload): Promise<string> {
+    const refreshTokenPayload: Omit<JwtPayload, 'iat' | 'exp'> = {
+      sub: payload.sub as JwtPayload['sub'],
+      email: payload.email,
+      tenantId: payload.tenantId as JwtPayload['tenantId'],
+      jti: this.generateTokenId(),
+      type: 'refresh',
+    };
+
+    return this.jwtService.signAsync(refreshTokenPayload, {
+      secret: this.refreshTokenSecret,
+      expiresIn: this.refreshTokenExpiry,
+    });
   }
 
   /**
@@ -203,43 +260,5 @@ export class TokenService {
    */
   generateInviteToken(): string {
     return crypto.randomBytes(32).toString('hex');
-  }
-
-  /**
-   * Generate access token only
-   */
-  async generateAccessToken(payload: TokenPayload): Promise<string> {
-    const tokens = await this.generateTokens(payload);
-    return tokens.accessToken;
-  }
-
-  /**
-   * Generate refresh token only
-   */
-  async generateRefreshToken(payload: Partial<TokenPayload>): Promise<string> {
-    const fullPayload: TokenPayload = {
-      sub: payload.sub || '',
-      email: payload.email || '',
-      tenantId: payload.tenantId || '',
-      ...payload,
-    };
-    const tokens = await this.generateTokens(fullPayload);
-    return tokens.refreshToken;
-  }
-
-  /**
-   * Get access token expiry in seconds
-   */
-  getAccessTokenExpirySeconds(): number {
-    return this.parseExpiryToSeconds(this.accessTokenExpiry);
-  }
-
-  /**
-   * Get refresh token expiry in milliseconds
-   */
-  getRefreshTokenExpiryMs(_rememberMe: boolean = false): number {
-    const seconds = this.parseExpiryToSeconds(this.refreshTokenExpiry);
-    // If remember me, extend to 30 days
-    return (_rememberMe ? seconds * 4 : seconds) * 1000;
   }
 }

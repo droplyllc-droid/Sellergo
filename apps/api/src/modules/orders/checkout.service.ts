@@ -177,7 +177,7 @@ export class CheckoutService {
       }
 
       // Check variant
-      let variant = null;
+      let variant: { id: string; price: number; quantity: number; sku?: string; options?: unknown } | null | undefined = null;
       let options: Record<string, string> = {};
       if (item.variantId) {
         variant = product.variants?.find((v: { id: string }) => v.id === item.variantId);

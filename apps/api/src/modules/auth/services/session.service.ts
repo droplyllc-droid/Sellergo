@@ -56,6 +56,24 @@ export class SessionService {
   }
 
   /**
+   * Create a new session (object parameter overload)
+   */
+  async createSessionFromObject(data: {
+    userId: string;
+    refreshTokenHash: string;
+    ipAddress: string;
+    userAgent: string;
+    expiresAt?: Date;
+  }): Promise<string> {
+    return this.createSession(
+      data.userId,
+      data.refreshTokenHash,
+      data.userAgent,
+      data.ipAddress,
+    );
+  }
+
+  /**
    * Create a new session
    */
   async createSession(

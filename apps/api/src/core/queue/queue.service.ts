@@ -4,16 +4,32 @@ import { Queue, Worker, Job, QueueEvents, JobsOptions } from 'bullmq';
 import Redis from 'ioredis';
 
 // Queue names
-export enum QueueName {
-  EMAIL = 'email',
-  WEBHOOK = 'webhook',
-  ANALYTICS = 'analytics',
-  BILLING = 'billing',
-  NOTIFICATIONS = 'notifications',
-  INTEGRATIONS = 'integrations',
-  ORDER = 'order',
-  DOMAIN = 'domain',
-}
+export type QueueName =
+  | 'email'
+  | 'webhook'
+  | 'analytics'
+  | 'billing'
+  | 'notifications'
+  | 'integrations'
+  | 'notification'
+  | 'pixel'
+  | 'domain'
+  | 'inventory'
+  | 'order';
+
+export const QueueNames = {
+  EMAIL: 'email' as const,
+  WEBHOOK: 'webhook' as const,
+  ANALYTICS: 'analytics' as const,
+  BILLING: 'billing' as const,
+  NOTIFICATIONS: 'notifications' as const,
+  INTEGRATIONS: 'integrations' as const,
+  NOTIFICATION: 'notification' as const,
+  PIXEL: 'pixel' as const,
+  DOMAIN: 'domain' as const,
+  INVENTORY: 'inventory' as const,
+  ORDER: 'order' as const,
+};
 
 // Job types
 export interface EmailJob {
@@ -102,7 +118,7 @@ export class QueueService implements OnModuleDestroy {
     });
 
     // Initialize queues
-    for (const queueName of Object.values(QueueName)) {
+    for (const queueName of Object.values(QueueNames)) {
       this.initializeQueue(queueName);
     }
   }
@@ -271,7 +287,7 @@ export class QueueService implements OnModuleDestroy {
       },
       {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      connection: this.connection as any,
+        connection: this.connection as any,
         concurrency: 5,
         limiter: {
           max: 10,
@@ -356,7 +372,7 @@ export class QueueService implements OnModuleDestroy {
    * Queue an email job
    */
   async queueEmail(job: EmailJob, options?: JobsOptions): Promise<Job<EmailJob>> {
-    return this.addJob(QueueName.EMAIL, `email:${job.type}`, job, options);
+    return this.addJob('email', `email:${job.type}`, job, options);
   }
 
   /**
@@ -366,7 +382,7 @@ export class QueueService implements OnModuleDestroy {
     job: WebhookJob,
     options?: JobsOptions
   ): Promise<Job<WebhookJob>> {
-    return this.addJob(QueueName.WEBHOOK, `webhook:${job.event}`, job, {
+    return this.addJob('webhook', `webhook:${job.event}`, job, {
       ...options,
       jobId: `${job.webhookId}:${job.event}:${Date.now()}`,
     });
@@ -379,7 +395,7 @@ export class QueueService implements OnModuleDestroy {
     job: AnalyticsJob,
     options?: JobsOptions
   ): Promise<Job<AnalyticsJob>> {
-    return this.addJob(QueueName.ANALYTICS, `analytics:${job.type}`, job, options);
+    return this.addJob('analytics', `analytics:${job.type}`, job, options);
   }
 
   /**
@@ -389,6 +405,6 @@ export class QueueService implements OnModuleDestroy {
     job: BillingJob,
     options?: JobsOptions
   ): Promise<Job<BillingJob>> {
-    return this.addJob(QueueName.BILLING, `billing:${job.type}`, job, options);
+    return this.addJob('billing', `billing:${job.type}`, job, options);
   }
 }

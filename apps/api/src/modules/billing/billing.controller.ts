@@ -56,7 +56,7 @@ export class BillingController {
   @Patch('settings')
   @UseGuards(JwtAuthGuard, TenantGuard, RolesGuard, StoreGuard)
   @ApiBearerAuth()
-  @RequirePermissions(Permission.BILLING_MANAGE)
+  @RequirePermissions(Permission.BILLING_UPDATE)
   @ApiOperation({ summary: 'Update billing settings' })
   async updateBillingSettings(
     @CurrentUser() user: AuthenticatedUser,
@@ -73,7 +73,7 @@ export class BillingController {
   @Post('top-up')
   @UseGuards(JwtAuthGuard, TenantGuard, RolesGuard, StoreGuard)
   @ApiBearerAuth()
-  @RequirePermissions(Permission.BILLING_MANAGE)
+  @RequirePermissions(Permission.BILLING_UPDATE)
   @ApiOperation({ summary: 'Create top-up payment' })
   @ApiResponse({ status: 201, description: 'Top-up initiated' })
   async createTopUp(
@@ -87,7 +87,7 @@ export class BillingController {
   @Post('confirm-payment')
   @UseGuards(JwtAuthGuard, TenantGuard, RolesGuard, StoreGuard)
   @ApiBearerAuth()
-  @RequirePermissions(Permission.BILLING_MANAGE)
+  @RequirePermissions(Permission.BILLING_UPDATE)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Confirm payment after client-side completion' })
   async confirmPayment(
@@ -195,7 +195,7 @@ export class BillingController {
   @Post('subscription')
   @UseGuards(JwtAuthGuard, TenantGuard, RolesGuard, StoreGuard)
   @ApiBearerAuth()
-  @RequirePermissions(Permission.BILLING_MANAGE)
+  @RequirePermissions(Permission.BILLING_UPDATE)
   @ApiOperation({ summary: 'Create subscription' })
   @ApiResponse({ status: 201, description: 'Subscription created' })
   async createSubscription(
@@ -209,7 +209,7 @@ export class BillingController {
   @Delete('subscription')
   @UseGuards(JwtAuthGuard, TenantGuard, RolesGuard, StoreGuard)
   @ApiBearerAuth()
-  @RequirePermissions(Permission.BILLING_MANAGE)
+  @RequirePermissions(Permission.BILLING_UPDATE)
   @ApiOperation({ summary: 'Cancel subscription' })
   async cancelSubscription(
     @CurrentUser() user: AuthenticatedUser,
@@ -238,7 +238,7 @@ export class BillingController {
   @Post('payment-methods')
   @UseGuards(JwtAuthGuard, TenantGuard, RolesGuard, StoreGuard)
   @ApiBearerAuth()
-  @RequirePermissions(Permission.BILLING_MANAGE)
+  @RequirePermissions(Permission.BILLING_UPDATE)
   @ApiOperation({ summary: 'Add payment method' })
   @ApiResponse({ status: 201, description: 'Payment method added' })
   async addPaymentMethod(
@@ -252,7 +252,7 @@ export class BillingController {
   @Delete('payment-methods/:paymentMethodId')
   @UseGuards(JwtAuthGuard, TenantGuard, RolesGuard, StoreGuard)
   @ApiBearerAuth()
-  @RequirePermissions(Permission.BILLING_MANAGE)
+  @RequirePermissions(Permission.BILLING_UPDATE)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Remove payment method' })
   async removePaymentMethod(
@@ -265,7 +265,7 @@ export class BillingController {
   @Post('payment-methods/:paymentMethodId/default')
   @UseGuards(JwtAuthGuard, TenantGuard, RolesGuard, StoreGuard)
   @ApiBearerAuth()
-  @RequirePermissions(Permission.BILLING_MANAGE)
+  @RequirePermissions(Permission.BILLING_UPDATE)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Set default payment method' })
   async setDefaultPaymentMethod(
@@ -331,8 +331,7 @@ export class StripeWebhookController {
       return { received: true };
     }
 
-    // @ts-expect-error - Stripe API version type mismatch
-    const stripe = new Stripe(stripeKey, { apiVersion: '2024-11-20.acacia' });
+    const stripe = new Stripe(stripeKey, { apiVersion: '2024-11-20.acacia' as any });
     const rawBody = req.rawBody;
 
     if (!rawBody) {

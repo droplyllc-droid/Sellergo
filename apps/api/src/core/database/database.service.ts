@@ -28,6 +28,7 @@ export class DatabaseService
   }
 
   /**
+   * Property alias for direct prisma access
    * Getter to allow `this.db.prisma.xxx` pattern
    * Returns the DatabaseService instance itself since it extends PrismaClient
    */
@@ -41,8 +42,8 @@ export class DatabaseService
 
     // Log slow queries in development
     if (process.env['NODE_ENV'] === 'development') {
-      // @ts-expect-error - Prisma event typing
-      this.$on('query', (e: Prisma.QueryEvent) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      this.$on('query', (e: any) => {
         if (e.duration > 100) {
           this.logger.warn(`Slow query (${e.duration}ms): ${e.query}`);
         }
@@ -56,32 +57,24 @@ export class DatabaseService
   }
 
   /**
-   * Execute operations within a tenant context
-   * This sets the PostgreSQL session variable for RLS
-   *
-   * Can be called in two ways:
-   * 1. withTenant(tenantId) - returns the DatabaseService for simple queries
-   * 2. withTenant(context, callback) - executes callback in transaction with RLS
+   * Get a tenant-scoped database client
+   * Note: For proper RLS, use withTenantTransaction instead
    */
-  withTenant(tenantId: string): Promise<this>;
-  withTenant<T>(
+  async withTenant(_tenantId: string): Promise<this> {
+    // TODO: Implement proper RLS with session variables
+    // For now, return the client directly
+    // The tenant isolation should be enforced at query level
+    return this;
+  }
+
+  /**
+   * Execute operations within a tenant context with RLS
+   * This sets the PostgreSQL session variable for RLS
+   */
+  async withTenantTransaction<T>(
     context: TenantContext,
     callback: (tx: Prisma.TransactionClient) => Promise<T>
-  ): Promise<T>;
-  async withTenant<T>(
-    contextOrTenantId: TenantContext | string,
-    callback?: (tx: Prisma.TransactionClient) => Promise<T>
-  ): Promise<this | T> {
-    // Simple form: just return self for basic queries (tenant filtering done in queries)
-    if (typeof contextOrTenantId === 'string' && !callback) {
-      return this;
-    }
-
-    // Full form: execute in transaction with RLS context
-    const context = typeof contextOrTenantId === 'string'
-      ? { tenantId: contextOrTenantId }
-      : contextOrTenantId;
-
+  ): Promise<T> {
     return this.$transaction(async (tx: Prisma.TransactionClient) => {
       // Set tenant context for RLS
       await tx.$executeRaw`SELECT set_config('app.tenant_id', ${context.tenantId}, true)`;
@@ -94,7 +87,7 @@ export class DatabaseService
         await tx.$executeRaw`SELECT set_config('app.store_id', ${context.storeId}, true)`;
       }
 
-      return callback!(tx);
+      return callback(tx);
     });
   }
 

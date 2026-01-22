@@ -135,6 +135,7 @@ export enum ErrorCode {
   FORBIDDEN = 'AUTHZ_001',
   INSUFFICIENT_PERMISSIONS = 'AUTHZ_002',
   RESOURCE_NOT_FOUND = 'AUTHZ_003',
+  NOT_FOUND = 'AUTHZ_003', // Alias for RESOURCE_NOT_FOUND
   TENANT_MISMATCH = 'AUTHZ_004',
 
   // Validation errors (3xxx)

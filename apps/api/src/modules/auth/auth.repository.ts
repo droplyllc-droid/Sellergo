@@ -108,6 +108,67 @@ export class AuthRepository {
   }
 
   /**
+   * Create user with tenant (alias for createUserWithStore)
+   */
+  async createUserWithTenant(data: CreateUserData) {
+    // Create a minimal store setup
+    return this.db.prisma.$transaction(async (tx) => {
+      // Create tenant
+      const tenant = await tx.tenant.create({
+        data: {
+          name: `${data.firstName}'s Workspace`,
+          status: 'active',
+        },
+      });
+
+      // Create user
+      const user = await tx.user.create({
+        data: {
+          email: data.email.toLowerCase(),
+          passwordHash: data.passwordHash,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          preferredLanguage: data.preferredLanguage || 'fr',
+          emailVerificationToken: data.emailVerificationToken,
+          status: 'pending',
+        },
+      });
+
+      return { user, tenant };
+    });
+  }
+
+  /**
+   * Generic user update method
+   */
+  async updateUser(userId: string, data: Record<string, unknown>) {
+    return this.db.prisma.user.update({
+      where: { id: userId },
+      data: data as any,
+    });
+  }
+
+  /**
+   * Create email verification token record
+   */
+  async createEmailVerificationToken(data: {
+    email: string;
+    token: string;
+    expiresAt: Date;
+  }) {
+    const user = await this.findUserByEmail(data.email);
+    if (user) {
+      return this.db.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          emailVerificationToken: data.token,
+        },
+      });
+    }
+    return null;
+  }
+
+  /**
    * Create user with store (full registration)
    */
   async createUserWithStore(data: CreateUserWithStoreData) {
@@ -521,16 +582,6 @@ export class AuthRepository {
       data: {
         emailVerificationToken: null,
       },
-    });
-  }
-
-  /**
-   * Update user data
-   */
-  async updateUser(userId: string, data: Record<string, unknown>) {
-    return this.db.prisma.user.update({
-      where: { id: userId },
-      data,
     });
   }
 }
